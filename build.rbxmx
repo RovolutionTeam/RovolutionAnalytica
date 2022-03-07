@@ -51,13 +51,14 @@ local _ = [[
                                                                             ,&%.    
                                                                             
 ]]
+-- RovolutionAnalytica is a library for reporting data to the RovolutionLogistcs API, for everything from visits to robux generated and much more. --
+local setupGlobals = TS.import(script, script, "globals").setupGlobals
+local RL_LOG = TS.import(script, script, "utils", "consoleLogging").RL_LOG
 local PlayerJoinHook = TS.import(script, script, "events", "PlayerJoins").PlayerJoinHook
 local SalesHook = TS.import(script, script, "events", "Robux").SalesHook
 local serverVitalsHook = TS.import(script, script, "events", "ServerVitals").serverVitalsHook
--- RovolutionAnalytica is a library for reporting data to the RovolutionLogistcs API, for everything from visits to robux generated and much more. --
-local setupGlobals = TS.import(script, script, "globals").setupGlobals
 local function RovolutionAnalytica(projectID, apiKey)
-	print("RovolutionAnalytica is starting up.")
+	RL_LOG("RovolutionAnalytica is starting up.")
 	-- First setup globals
 	setupGlobals(projectID, apiKey)
 	-- Call all listening hooks
