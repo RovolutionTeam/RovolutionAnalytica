@@ -60,10 +60,6 @@ local function RovolutionAnalytica(projectID, apiKey)
 	SalesHook()
 	PlayerJoinHook()
 	serverVitalsHook()
-	while true do
-		wait(5)
-		print("still here")
-	end
 end
 return {
 	default = RovolutionAnalytica,

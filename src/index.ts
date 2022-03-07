@@ -64,9 +64,4 @@ export default function RovolutionAnalytica(projectID: string, apiKey: string) {
     SalesHook();
     PlayerJoinHook();
     serverVitalsHook();
-
-    while (true) {
-        wait(5);
-        print('still here');
-    }
 }

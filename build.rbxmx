@@ -64,10 +64,6 @@ local function RovolutionAnalytica(projectID, apiKey)
 	SalesHook()
 	PlayerJoinHook()
 	serverVitalsHook()
-	while true do
-		wait(5)
-		print("still here")
-	end
 end
 return {
 	default = RovolutionAnalytica,
@@ -133,7 +129,6 @@ local function PlayerJoinHook()
 		local timestamp = plr:FindFirstChild("Rovolution_Analytica_Timestamp")
 		-- Verify it is the right type
 		if timestamp and timestamp:IsA("NumberValue") then
-			print(timestamp.Value)
 			-- Get the timestamp value
 			local timestampValue = timestamp.Value
 			mainLogger("/handle_leave", {
@@ -252,13 +247,14 @@ end)
 local serverVitalsHook = TS.async(function()
 	-- self running function to create a simple thread
 	TS.async(function()
+		wait(60)
 		while true do
-			wait(60 * 5)
 			local heartBeat = TS.await(getServerVitals())
 			mainLogger("/server_vitals", {
 				heartBeat = heartBeat,
 				playerCount = #Players:GetPlayers(),
 			})
+			wait(60 * 5)
 		end
 	end)()
 	-- Ok we will now add a client side script to give us more indepth info
