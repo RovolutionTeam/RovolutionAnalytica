@@ -25,6 +25,7 @@ export function PlayerJoinHook() {
             plr: plr.Name,
             userId: plr.UserId,
             inGroup: checkInParentGroup(plr, game.CreatorId, ownerType),
+            CountryCode: await LocalizationService.GetCountryRegionForPlayerAsync(plr),
         });
     });
 
