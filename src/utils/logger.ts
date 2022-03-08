@@ -12,8 +12,8 @@ export function mainLogger(typeOfReq: string, message: any) {
     // Create the data packet
 
     let data = {
-        typeOfReq,
         message,
+        timestamp: os.time(),
         project_id: ProjectID,
         api_key: API_KEY,
     };
