@@ -2,14 +2,16 @@
 local TS = require(script.Parent.Parent.include.RuntimeLib)
 -- Written By GeraldIn2016, RovolutionAnalytica "Its what you don't see" --
 -- This handles all robux transiations --
-local MarketplaceService = TS.import(script, TS.getModule(script, "@rbxts", "services")).MarketplaceService
+local _services = TS.import(script, TS.getModule(script, "@rbxts", "services"))
+local HttpService = _services.HttpService
+local MarketplaceService = _services.MarketplaceService
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
 local checkInParentGroup = TS.import(script, script.Parent.Parent, "utils", "InParentGroup").checkInParentGroup
 local fetchProductInfo = function(productId, typeOfProduct)
 	local productInfo = MarketplaceService:GetProductInfo(productId, typeOfProduct)
 	return productInfo
 end
-local function SalesHook()
+local SalesHook = TS.async(function()
 	-- Gamepass Purchase or prompt failed
 	MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(plr, gamepassID, purchased)
 		-- get the gamepass Info
@@ -22,6 +24,7 @@ local function SalesHook()
 			gamepass_name = gamepassInfo.Name,
 			gamepass_price = gamepassInfo.PriceInRobux,
 			purchased = purchased,
+			UUID = HttpService:GenerateGUID(false),
 		}
 		mainLogger("/handle_gamepass", object)
 	end)
@@ -36,10 +39,11 @@ local function SalesHook()
 			product_name = productInfo.Name,
 			product_price = productInfo.PriceInRobux,
 			purchased = purchased,
+			UUID = HttpService:GenerateGUID(false),
 		}
 		mainLogger("/handle_product", object)
 	end)
-end
+end)
 local _ = MarketplaceService
 return {
 	SalesHook = SalesHook,

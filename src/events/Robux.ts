@@ -2,21 +2,19 @@
 
 // This handles all robux transiations --
 
-import { MarketplaceService } from "@rbxts/services";
-import { mainLogger } from "utils/logger";
-import { checkInParentGroup } from "utils/InParentGroup";
+import { HttpService, MarketplaceService } from '@rbxts/services';
+import { mainLogger } from 'utils/logger';
+import { checkInParentGroup } from 'utils/InParentGroup';
 
-
-let fetchProductInfo = (productId: number, typeOfProduct:Enum.InfoType) => {
+let fetchProductInfo = (productId: number, typeOfProduct: Enum.InfoType) => {
     let productInfo = MarketplaceService.GetProductInfo(productId, typeOfProduct);
 
-    return productInfo
-}
+    return productInfo;
+};
 
-export function SalesHook() {
-    
+export async function SalesHook() {
     // Gamepass Purchase or prompt failed
-    MarketplaceService.PromptGamePassPurchaseFinished.Connect((plr:Player, gamepassID:number, purchased:boolean) => {
+    MarketplaceService.PromptGamePassPurchaseFinished.Connect((plr: Player, gamepassID: number, purchased: boolean) => {
         // get the gamepass Info
         let gamepassInfo = fetchProductInfo(gamepassID, Enum.InfoType.GamePass);
 
@@ -28,12 +26,13 @@ export function SalesHook() {
             gamepass_name: gamepassInfo.Name,
             gamepass_price: gamepassInfo.PriceInRobux,
             purchased,
-        }
+            UUID: HttpService.GenerateGUID(false),
+        };
 
-        mainLogger("/handle_gamepass", object)
-    })
+        mainLogger('/handle_gamepass', object);
+    });
 
-    MarketplaceService.PromptPurchaseFinished.Connect((plr:Player, productId:number, purchased:boolean) => {
+    MarketplaceService.PromptPurchaseFinished.Connect((plr: Player, productId: number, purchased: boolean) => {
         // get the product Info
         let productInfo = fetchProductInfo(productId, Enum.InfoType.Product);
 
@@ -45,10 +44,10 @@ export function SalesHook() {
             product_name: productInfo.Name,
             product_price: productInfo.PriceInRobux,
             purchased,
-        }
+            UUID: HttpService.GenerateGUID(false),
+        };
 
-        mainLogger("/handle_product", object)
-    })
-
+        mainLogger('/handle_product', object);
+    });
 }
-MarketplaceService
+MarketplaceService;

@@ -5,16 +5,18 @@ local HttpService = TS.import(script, TS.getModule(script, "@rbxts", "services")
 local fetchGlobals = TS.import(script, script.Parent.Parent, "globals").fetchGlobals
 local RL_LOG = TS.import(script, script.Parent, "consoleLogging").RL_LOG
 local root_api = "https://analytics.rovolution.me/api/v1"
-local _binding = fetchGlobals()
-local ProjectID = _binding.ProjectID
-local API_KEY = _binding.API_KEY
+-- --------------------------------------------------------------------
 local function mainLogger(typeOfReq, message)
+	local _binding = fetchGlobals()
+	local ProjectID = _binding.ProjectID
+	local API_KEY = _binding.API_KEY
 	-- Create the data packet
 	local data = {
 		typeOfReq = typeOfReq,
 		message = message,
 		project_id = ProjectID,
 		api_key = API_KEY,
+		timestamp = os.time() * 1000,
 	}
 	local json_Serialised = ""
 	local _exitType, _returns = TS.try(function()
@@ -31,9 +33,9 @@ local function mainLogger(typeOfReq, message)
 	-- Send the data packet to the API
 	TS.try(function()
 		HttpService:PostAsync(root_api .. typeOfReq, json_Serialised)
-	end, function()
+	end, function(e)
 		-- If it fails, log it
-		RL_LOG("Failed to send data to API")
+		RL_LOG("Failed to send data to API " .. tostring(e))
 	end)
 end
 return {

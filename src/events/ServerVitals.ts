@@ -1,6 +1,6 @@
 // Written By GeraldIn2016, RovolutionAnalytica "Its what you don't see" --
 
-import { LocalizationService, Players, ReplicatedStorage, RunService, StarterPlayer } from '@rbxts/services';
+import { HttpService, LocalizationService, Players, ReplicatedStorage, RunService, StarterPlayer, Workspace } from '@rbxts/services';
 import { RL_LOG } from 'utils/consoleLogging';
 import { mainLogger } from 'utils/logger';
 
@@ -9,8 +9,7 @@ let cache: {
     [key: string]: number;
 } = {};
 
-async function getServerVitals() {
-    // Wrap in promise
+export const getServerVitals = () => {
     let prom = () => {
         let connection: RBXScriptConnection;
         let count = 0;
@@ -34,23 +33,10 @@ async function getServerVitals() {
         });
     };
 
-    return await prom();
-}
+    return prom();
+};
 
 export async function serverVitalsHook() {
-    // self running function to create a simple thread
-    (async () => {
-        wait(60); // Wait 60 seconds to calm down
-        while (true) {
-            let heartBeat = await getServerVitals();
-
-            mainLogger('/server_vitals', {
-                heartBeat,
-                playerCount: Players.GetPlayers().size(),
-            });
-            wait(60 * 5); // Every 5 mins update heartbeat
-        }
-    })();
     // Ok we will now add a client side script to give us more indepth info
 
     // first create a remote event
@@ -76,6 +62,7 @@ export async function serverVitalsHook() {
                 FPS: newData.fps,
                 ping: newData.ping,
                 CountryCode: await LocalizationService.GetCountryRegionForPlayerAsync(plr),
+                UUID: HttpService.GenerateGUID(false),
             });
         } else {
             // We are in the cache
@@ -101,4 +88,19 @@ export async function serverVitalsHook() {
     RemoteFunction.OnServerInvoke = async () => {
         return os.clock();
     };
+
+    // self running function to create a simple thread
+    (async () => {
+        wait(60); // Wait 60 seconds to calm down
+        while (true) {
+            let heartBeat = await getServerVitals();
+
+            mainLogger('/server_vitals', {
+                heartBeat,
+                playerCount: Players.GetPlayers().size(),
+                physicsSpeed: Workspace.GetRealPhysicsFPS(),
+            });
+            wait(60 * 5); // Every 5 mins update heartbeat
+        }
+    })();
 }

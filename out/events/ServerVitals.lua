@@ -2,17 +2,18 @@
 local TS = require(script.Parent.Parent.include.RuntimeLib)
 -- Written By GeraldIn2016, RovolutionAnalytica "Its what you don't see" --
 local _services = TS.import(script, TS.getModule(script, "@rbxts", "services"))
+local HttpService = _services.HttpService
 local LocalizationService = _services.LocalizationService
 local Players = _services.Players
 local ReplicatedStorage = _services.ReplicatedStorage
 local RunService = _services.RunService
 local StarterPlayer = _services.StarterPlayer
+local Workspace = _services.Workspace
 local RL_LOG = TS.import(script, script.Parent.Parent, "utils", "consoleLogging").RL_LOG
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
 -- lets make a cache to stop users spamming
 local cache = {}
-local getServerVitals = TS.async(function()
-	-- Wrap in promise
+local getServerVitals = function()
 	local prom = function()
 		local connection
 		local count = 0
@@ -37,21 +38,9 @@ local getServerVitals = TS.async(function()
 			connection = RunService.Heartbeat:Connect(onHeartbeat)
 		end)
 	end
-	return TS.await(prom())
-end)
+	return prom()
+end
 local serverVitalsHook = TS.async(function()
-	-- self running function to create a simple thread
-	TS.async(function()
-		wait(60)
-		while true do
-			local heartBeat = TS.await(getServerVitals())
-			mainLogger("/server_vitals", {
-				heartBeat = heartBeat,
-				playerCount = #Players:GetPlayers(),
-			})
-			wait(60 * 5)
-		end
-	end)()
 	-- Ok we will now add a client side script to give us more indepth info
 	-- first create a remote event
 	local remoteEvent = Instance.new("RemoteEvent", ReplicatedStorage)
@@ -70,6 +59,7 @@ local serverVitalsHook = TS.async(function()
 				FPS = newData.fps,
 				ping = newData.ping,
 				CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
+				UUID = HttpService:GenerateGUID(false),
 			})
 		else
 			-- We are in the cache
@@ -95,7 +85,21 @@ local serverVitalsHook = TS.async(function()
 	RemoteFunction.OnServerInvoke = TS.async(function()
 		return os.clock()
 	end)
+	-- self running function to create a simple thread
+	TS.async(function()
+		wait(60)
+		while true do
+			local heartBeat = TS.await(getServerVitals())
+			mainLogger("/server_vitals", {
+				heartBeat = heartBeat,
+				playerCount = #Players:GetPlayers(),
+				physicsSpeed = Workspace:GetRealPhysicsFPS(),
+			})
+			wait(60 * 5)
+		end
+	end)()
 end)
 return {
 	serverVitalsHook = serverVitalsHook,
+	getServerVitals = getServerVitals,
 }

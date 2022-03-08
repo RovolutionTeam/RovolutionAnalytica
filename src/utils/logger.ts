@@ -6,9 +6,10 @@ import { RL_LOG } from './consoleLogging';
 
 const root_api = 'https://analytics.rovolution.me/api/v1';
 
-const { ProjectID, API_KEY } = fetchGlobals();
+// --------------------------------------------------------------------
 
 export function mainLogger(typeOfReq: string, message: any) {
+    const { ProjectID, API_KEY } = fetchGlobals();
     // Create the data packet
 
     let data = {
@@ -16,6 +17,7 @@ export function mainLogger(typeOfReq: string, message: any) {
         message,
         project_id: ProjectID,
         api_key: API_KEY,
+        timestamp: os.time() * 1000,
     };
 
     let json_Serialised: string = '';
@@ -31,8 +33,8 @@ export function mainLogger(typeOfReq: string, message: any) {
     // Send the data packet to the API
     try {
         HttpService.PostAsync(root_api + typeOfReq, json_Serialised);
-    } catch {
+    } catch (e) {
         // If it fails, log it
-        RL_LOG('Failed to send data to API');
+        RL_LOG(`Failed to send data to API ${e}`);
     }
 }

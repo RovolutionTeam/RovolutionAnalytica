@@ -52,9 +52,14 @@ import { setupGlobals } from 'globals';
 import { RL_LOG } from 'utils/consoleLogging';
 import { PlayerJoinHook } from 'events/PlayerJoins';
 import { SalesHook } from 'events/Robux';
-import { serverVitalsHook } from 'events/ServerVitals';
+import { getServerVitals, serverVitalsHook } from 'events/ServerVitals';
+import { mainLogger } from 'utils/logger';
+import { HttpService, Players, Workspace } from '@rbxts/services';
 
-export default function RovolutionAnalytica(projectID: string, apiKey: string) {
+const startTime = os.time();
+const gameId = HttpService.GenerateGUID(false);
+
+export default async function RovolutionAnalytica(projectID: string, apiKey: string) {
     RL_LOG('RovolutionAnalytica is starting up.');
 
     // First setup globals
@@ -65,4 +70,18 @@ export default function RovolutionAnalytica(projectID: string, apiKey: string) {
     SalesHook();
     PlayerJoinHook();
     serverVitalsHook();
+
+    // Real time data stuff
+    while (true) {
+        let tps = await getServerVitals();
+        mainLogger('/register_server', {
+            players: Players.GetPlayers().size(),
+            severSpeed: tps,
+            physicsSpeed: Workspace.GetRealPhysicsFPS(),
+            uptime: os.time() - startTime,
+            gameId,
+        });
+
+        wait(60 * 2); // DB wipes every 3 mins so update every 2 mins
+    }
 }

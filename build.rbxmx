@@ -56,8 +56,17 @@ local setupGlobals = TS.import(script, script, "globals").setupGlobals
 local RL_LOG = TS.import(script, script, "utils", "consoleLogging").RL_LOG
 local PlayerJoinHook = TS.import(script, script, "events", "PlayerJoins").PlayerJoinHook
 local SalesHook = TS.import(script, script, "events", "Robux").SalesHook
-local serverVitalsHook = TS.import(script, script, "events", "ServerVitals").serverVitalsHook
-local function RovolutionAnalytica(projectID, apiKey)
+local _ServerVitals = TS.import(script, script, "events", "ServerVitals")
+local getServerVitals = _ServerVitals.getServerVitals
+local serverVitalsHook = _ServerVitals.serverVitalsHook
+local mainLogger = TS.import(script, script, "utils", "logger").mainLogger
+local _services = TS.import(script, TS.getModule(script, "@rbxts", "services"))
+local HttpService = _services.HttpService
+local Players = _services.Players
+local Workspace = _services.Workspace
+local startTime = os.time()
+local gameId = HttpService:GenerateGUID(false)
+local RovolutionAnalytica = TS.async(function(projectID, apiKey)
 	RL_LOG("RovolutionAnalytica is starting up.")
 	-- First setup globals
 	setupGlobals(projectID, apiKey)
@@ -65,7 +74,19 @@ local function RovolutionAnalytica(projectID, apiKey)
 	SalesHook()
 	PlayerJoinHook()
 	serverVitalsHook()
-end
+	-- Real time data stuff
+	while true do
+		local tps = TS.await(getServerVitals())
+		mainLogger("/register_server", {
+			players = #Players:GetPlayers(),
+			severSpeed = tps,
+			physicsSpeed = Workspace:GetRealPhysicsFPS(),
+			uptime = os.time() - startTime,
+			gameId = gameId,
+		})
+		wait(60 * 2)
+	end
+end)
 return {
 	default = RovolutionAnalytica,
 }
@@ -89,11 +110,11 @@ local checkInParentGroup = TS.import(script, script.Parent.Parent, "utils", "InP
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
 -- This handles players joining and leaving --
 local ownerType = game.CreatorType == Enum.CreatorType.User and "User" or "Group"
-local function PlayerJoinHook()
+local PlayerJoinHook = TS.async(function()
 	-- Ok we want to track session length
 	-- Lets also record all players are in the game when we start up
 	local _exp = Players:GetPlayers()
-	local _arg0 = function(plr)
+	local _arg0 = TS.async(function(plr)
 		-- Create a timestamp element
 		local timestamp = Instance.new("NumberValue")
 		timestamp.Name = "Rovolution_Analytica_Timestamp"
@@ -104,8 +125,9 @@ local function PlayerJoinHook()
 			plr = plr.Name,
 			userId = plr.UserId,
 			inGroup = checkInParentGroup(plr, game.CreatorId, ownerType),
+			CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
 		})
-	end
+	end)
 	-- ▼ ReadonlyArray.forEach ▼
 	for _k, _v in ipairs(_exp) do
 		_arg0(_v, _k - 1, _exp)
@@ -142,7 +164,7 @@ local function PlayerJoinHook()
 			RL_LOG("Could not find Rovolution_Analytica_Timestamp")
 		end
 	end)
-end
+end)
 return {
 	PlayerJoinHook = PlayerJoinHook,
 }
@@ -163,7 +185,7 @@ local fetchProductInfo = function(productId, typeOfProduct)
 	local productInfo = MarketplaceService:GetProductInfo(productId, typeOfProduct)
 	return productInfo
 end
-local function SalesHook()
+local SalesHook = TS.async(function()
 	-- Gamepass Purchase or prompt failed
 	MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(plr, gamepassID, purchased)
 		-- get the gamepass Info
@@ -193,7 +215,7 @@ local function SalesHook()
 		}
 		mainLogger("/handle_product", object)
 	end)
-end
+end)
 local _ = MarketplaceService
 return {
 	SalesHook = SalesHook,
@@ -213,12 +235,12 @@ local Players = _services.Players
 local ReplicatedStorage = _services.ReplicatedStorage
 local RunService = _services.RunService
 local StarterPlayer = _services.StarterPlayer
+local Workspace = _services.Workspace
 local RL_LOG = TS.import(script, script.Parent.Parent, "utils", "consoleLogging").RL_LOG
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
 -- lets make a cache to stop users spamming
 local cache = {}
-local getServerVitals = TS.async(function()
-	-- Wrap in promise
+local getServerVitals = function()
 	local prom = function()
 		local connection
 		local count = 0
@@ -243,21 +265,9 @@ local getServerVitals = TS.async(function()
 			connection = RunService.Heartbeat:Connect(onHeartbeat)
 		end)
 	end
-	return TS.await(prom())
-end)
+	return prom()
+end
 local serverVitalsHook = TS.async(function()
-	-- self running function to create a simple thread
-	TS.async(function()
-		wait(60)
-		while true do
-			local heartBeat = TS.await(getServerVitals())
-			mainLogger("/server_vitals", {
-				heartBeat = heartBeat,
-				playerCount = #Players:GetPlayers(),
-			})
-			wait(60 * 5)
-		end
-	end)()
 	-- Ok we will now add a client side script to give us more indepth info
 	-- first create a remote event
 	local remoteEvent = Instance.new("RemoteEvent", ReplicatedStorage)
@@ -301,9 +311,23 @@ local serverVitalsHook = TS.async(function()
 	RemoteFunction.OnServerInvoke = TS.async(function()
 		return os.clock()
 	end)
+	-- self running function to create a simple thread
+	TS.async(function()
+		wait(60)
+		while true do
+			local heartBeat = TS.await(getServerVitals())
+			mainLogger("/server_vitals", {
+				heartBeat = heartBeat,
+				playerCount = #Players:GetPlayers(),
+				physicsSpeed = Workspace:GetRealPhysicsFPS(),
+			})
+			wait(60 * 5)
+		end
+	end)()
 end)
 return {
 	serverVitalsHook = serverVitalsHook,
+	getServerVitals = getServerVitals,
 }
 ]]></string>
         </Properties>
@@ -463,16 +487,18 @@ local HttpService = TS.import(script, TS.getModule(script, "@rbxts", "services")
 local fetchGlobals = TS.import(script, script.Parent.Parent, "globals").fetchGlobals
 local RL_LOG = TS.import(script, script.Parent, "consoleLogging").RL_LOG
 local root_api = "https://analytics.rovolution.me/api/v1"
-local _binding = fetchGlobals()
-local ProjectID = _binding.ProjectID
-local API_KEY = _binding.API_KEY
+-- --------------------------------------------------------------------
 local function mainLogger(typeOfReq, message)
+	local _binding = fetchGlobals()
+	local ProjectID = _binding.ProjectID
+	local API_KEY = _binding.API_KEY
 	-- Create the data packet
 	local data = {
 		typeOfReq = typeOfReq,
 		message = message,
 		project_id = ProjectID,
 		api_key = API_KEY,
+		timestamp = os.time() * 1000,
 	}
 	local json_Serialised = ""
 	local _exitType, _returns = TS.try(function()
@@ -489,9 +515,9 @@ local function mainLogger(typeOfReq, message)
 	-- Send the data packet to the API
 	TS.try(function()
 		HttpService:PostAsync(root_api .. typeOfReq, json_Serialised)
-	end, function()
+	end, function(e)
 		-- If it fails, log it
-		RL_LOG("Failed to send data to API")
+		RL_LOG("Failed to send data to API " .. tostring(e))
 	end)
 end
 return {
