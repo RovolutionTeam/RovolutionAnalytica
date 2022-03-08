@@ -72,7 +72,7 @@ while true do
 		local fps = Workspace:GetRealPhysicsFPS()
 		print(": RovolutionAnalytica : FPS : " .. tostring(fps))
 		API:FireServer({
-			ping = roundTo2D(totalPing),
+			ping = roundTo2DP(totalPing),
 			fps = math.floor(fps),
 		})
 	end

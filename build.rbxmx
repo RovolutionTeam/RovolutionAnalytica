@@ -103,6 +103,7 @@ return {
 local TS = require(script.Parent.Parent.include.RuntimeLib)
 -- Written By GeraldIn2016, RovolutionAnalytica "Its what you don't see" --
 local _services = TS.import(script, TS.getModule(script, "@rbxts", "services"))
+local HttpService = _services.HttpService
 local LocalizationService = _services.LocalizationService
 local Players = _services.Players
 local RL_LOG = TS.import(script, script.Parent.Parent, "utils", "consoleLogging").RL_LOG
@@ -126,6 +127,7 @@ local PlayerJoinHook = TS.async(function()
 			userId = plr.UserId,
 			inGroup = checkInParentGroup(plr, game.CreatorId, ownerType),
 			CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
+			UUID = HttpService:GenerateGUID(false),
 		})
 	end)
 	-- ▼ ReadonlyArray.forEach ▼
@@ -145,6 +147,7 @@ local PlayerJoinHook = TS.async(function()
 			userId = plr.UserId,
 			inGroup = checkInParentGroup(plr, game.CreatorId, ownerType),
 			CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
+			UUID = HttpService:GenerateGUID(false),
 		})
 	end))
 	Players.PlayerRemoving:Connect(function(plr)
@@ -159,6 +162,7 @@ local PlayerJoinHook = TS.async(function()
 				userId = plr.UserId,
 				sessionDuration = os.time() - timestampValue,
 				inGroup = checkInParentGroup(plr, game.CreatorId, ownerType),
+				UUID = HttpService:GenerateGUID(false),
 			})
 		else
 			RL_LOG("Could not find Rovolution_Analytica_Timestamp")
@@ -178,7 +182,9 @@ return {
 local TS = require(script.Parent.Parent.include.RuntimeLib)
 -- Written By GeraldIn2016, RovolutionAnalytica "Its what you don't see" --
 -- This handles all robux transiations --
-local MarketplaceService = TS.import(script, TS.getModule(script, "@rbxts", "services")).MarketplaceService
+local _services = TS.import(script, TS.getModule(script, "@rbxts", "services"))
+local HttpService = _services.HttpService
+local MarketplaceService = _services.MarketplaceService
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
 local checkInParentGroup = TS.import(script, script.Parent.Parent, "utils", "InParentGroup").checkInParentGroup
 local fetchProductInfo = function(productId, typeOfProduct)
@@ -198,6 +204,7 @@ local SalesHook = TS.async(function()
 			gamepass_name = gamepassInfo.Name,
 			gamepass_price = gamepassInfo.PriceInRobux,
 			purchased = purchased,
+			UUID = HttpService:GenerateGUID(false),
 		}
 		mainLogger("/handle_gamepass", object)
 	end)
@@ -212,6 +219,7 @@ local SalesHook = TS.async(function()
 			product_name = productInfo.Name,
 			product_price = productInfo.PriceInRobux,
 			purchased = purchased,
+			UUID = HttpService:GenerateGUID(false),
 		}
 		mainLogger("/handle_product", object)
 	end)
@@ -230,6 +238,7 @@ return {
 local TS = require(script.Parent.Parent.include.RuntimeLib)
 -- Written By GeraldIn2016, RovolutionAnalytica "Its what you don't see" --
 local _services = TS.import(script, TS.getModule(script, "@rbxts", "services"))
+local HttpService = _services.HttpService
 local LocalizationService = _services.LocalizationService
 local Players = _services.Players
 local ReplicatedStorage = _services.ReplicatedStorage
@@ -286,6 +295,7 @@ local serverVitalsHook = TS.async(function()
 				FPS = newData.fps,
 				ping = newData.ping,
 				CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
+				UUID = HttpService:GenerateGUID(false),
 			})
 		else
 			-- We are in the cache
@@ -320,6 +330,7 @@ local serverVitalsHook = TS.async(function()
 				heartBeat = heartBeat,
 				playerCount = #Players:GetPlayers(),
 				physicsSpeed = Workspace:GetRealPhysicsFPS(),
+				UUID = HttpService:GenerateGUID(false),
 			})
 			wait(60 * 5)
 		end
@@ -409,7 +420,7 @@ while true do
 		local fps = Workspace:GetRealPhysicsFPS()
 		print(": RovolutionAnalytica : FPS : " .. tostring(fps))
 		API:FireServer({
-			ping = roundTo2D(totalPing),
+			ping = roundTo2DP(totalPing),
 			fps = math.floor(fps),
 		})
 	end
@@ -494,11 +505,10 @@ local function mainLogger(typeOfReq, message)
 	local API_KEY = _binding.API_KEY
 	-- Create the data packet
 	local data = {
-		typeOfReq = typeOfReq,
 		message = message,
+		timestamp = os.time() * 1000,
 		project_id = ProjectID,
 		api_key = API_KEY,
-		timestamp = os.time() * 1000,
 	}
 	local json_Serialised = ""
 	local _exitType, _returns = TS.try(function()
