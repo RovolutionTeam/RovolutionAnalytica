@@ -94,6 +94,7 @@ local serverVitalsHook = TS.async(function()
 				heartBeat = heartBeat,
 				playerCount = #Players:GetPlayers(),
 				physicsSpeed = Workspace:GetRealPhysicsFPS(),
+				UUID = HttpService:GenerateGUID(false),
 			})
 			wait(60 * 5)
 		end

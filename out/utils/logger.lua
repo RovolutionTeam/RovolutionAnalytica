@@ -12,11 +12,10 @@ local function mainLogger(typeOfReq, message)
 	local API_KEY = _binding.API_KEY
 	-- Create the data packet
 	local data = {
-		typeOfReq = typeOfReq,
 		message = message,
+		timestamp = os.time() * 1000,
 		project_id = ProjectID,
 		api_key = API_KEY,
-		timestamp = os.time() * 1000,
 	}
 	local json_Serialised = ""
 	local _exitType, _returns = TS.try(function()

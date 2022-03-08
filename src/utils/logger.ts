@@ -13,11 +13,10 @@ export function mainLogger(typeOfReq: string, message: any) {
     // Create the data packet
 
     let data = {
-        typeOfReq,
         message,
+        timestamp: os.time() * 1000,
         project_id: ProjectID,
         api_key: API_KEY,
-        timestamp: os.time() * 1000,
     };
 
     let json_Serialised: string = '';

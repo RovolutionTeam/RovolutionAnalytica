@@ -99,6 +99,7 @@ export async function serverVitalsHook() {
                 heartBeat,
                 playerCount: Players.GetPlayers().size(),
                 physicsSpeed: Workspace.GetRealPhysicsFPS(),
+                UUID: HttpService.GenerateGUID(false),
             });
             wait(60 * 5); // Every 5 mins update heartbeat
         }
