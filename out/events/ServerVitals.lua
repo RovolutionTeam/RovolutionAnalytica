@@ -40,7 +40,7 @@ local getServerVitals = function()
 	end
 	return prom()
 end
-local serverVitalsHook = TS.async(function()
+local serverVitalsHook = TS.async(function(gameId)
 	-- Ok we will now add a client side script to give us more indepth info
 	-- first create a remote event
 	local remoteEvent = Instance.new("RemoteEvent", ReplicatedStorage)
@@ -59,7 +59,7 @@ local serverVitalsHook = TS.async(function()
 				FPS = newData.fps,
 				ping = newData.ping,
 				CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
-				UUID = HttpService:GenerateGUID(false),
+				gameId = gameId,
 			})
 		else
 			-- We are in the cache

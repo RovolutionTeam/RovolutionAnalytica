@@ -36,7 +36,7 @@ export const getServerVitals = () => {
     return prom();
 };
 
-export async function serverVitalsHook() {
+export async function serverVitalsHook(gameId: string) {
     // Ok we will now add a client side script to give us more indepth info
 
     // first create a remote event
@@ -62,7 +62,7 @@ export async function serverVitalsHook() {
                 FPS: newData.fps,
                 ping: newData.ping,
                 CountryCode: await LocalizationService.GetCountryRegionForPlayerAsync(plr),
-                UUID: HttpService.GenerateGUID(false),
+                gameId: gameId,
             });
         } else {
             // We are in the cache

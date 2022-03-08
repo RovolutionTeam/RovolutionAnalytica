@@ -69,7 +69,7 @@ local RovolutionAnalytica = TS.async(function(projectID, apiKey)
 	-- Call all listening hooks
 	SalesHook()
 	PlayerJoinHook()
-	serverVitalsHook()
+	serverVitalsHook(gameId)
 	-- Real time data stuff
 	while true do
 		local tps = TS.await(getServerVitals())

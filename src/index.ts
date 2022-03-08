@@ -69,7 +69,7 @@ export default async function RovolutionAnalytica(projectID: string, apiKey: str
 
     SalesHook();
     PlayerJoinHook();
-    serverVitalsHook();
+    serverVitalsHook(gameId);
 
     // Real time data stuff
     while (true) {
