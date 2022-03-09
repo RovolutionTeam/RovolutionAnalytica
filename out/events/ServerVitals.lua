@@ -8,6 +8,7 @@ local Players = _services.Players
 local ReplicatedStorage = _services.ReplicatedStorage
 local RunService = _services.RunService
 local StarterPlayer = _services.StarterPlayer
+local Stats = _services.Stats
 local Workspace = _services.Workspace
 local RL_LOG = TS.import(script, script.Parent.Parent, "utils", "consoleLogging").RL_LOG
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
@@ -95,6 +96,12 @@ local serverVitalsHook = TS.async(function(gameId)
 				playerCount = #Players:GetPlayers(),
 				physicsSpeed = Workspace:GetRealPhysicsFPS(),
 				UUID = HttpService:GenerateGUID(false),
+				primitivesCount = Stats.PrimitivesCount,
+				dataSent = Stats.DataSendKbps,
+				dataReceived = Stats.DataReceiveKbps,
+				movingPrimatives = Stats.MovingPrimitivesCount,
+				ContactsCount = Stats.ContactsCount,
+				gameId = gameId,
 			})
 			wait(60 * 5)
 		end

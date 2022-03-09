@@ -4,6 +4,7 @@ local TS = require(script.Parent.Parent.include.RuntimeLib)
 -- This handles all robux transiations --
 local _services = TS.import(script, TS.getModule(script, "@rbxts", "services"))
 local HttpService = _services.HttpService
+local LocalizationService = _services.LocalizationService
 local MarketplaceService = _services.MarketplaceService
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
 local checkInParentGroup = TS.import(script, script.Parent.Parent, "utils", "InParentGroup").checkInParentGroup
@@ -11,38 +12,38 @@ local fetchProductInfo = function(productId, typeOfProduct)
 	local productInfo = MarketplaceService:GetProductInfo(productId, typeOfProduct)
 	return productInfo
 end
+local generateReturnObject = TS.async(function(plr, MainId, purchased, typeBought, gamepassInfo)
+	return {
+		typeBought = typeBought,
+		plr = plr.Name,
+		userId = plr.UserId,
+		inGroup = checkInParentGroup(plr, gamepassInfo.Creator.CreatorTargetId, gamepassInfo.Creator.CreatorType),
+		privateServer = game.PrivateServerId == "" and true or false,
+		CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
+		product_id = MainId,
+		product_name = gamepassInfo.Name,
+		product_price = gamepassInfo.PriceInRobux,
+		purchased = purchased,
+		gameId = game.GameId,
+		gameName = game.Name,
+		gameGenre = game.Genre.Name,
+		UUID = HttpService:GenerateGUID(false),
+	}
+end)
 local SalesHook = TS.async(function()
 	-- Gamepass Purchase or prompt failed
-	MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(plr, gamepassID, purchased)
+	MarketplaceService.PromptGamePassPurchaseFinished:Connect(TS.async(function(plr, gamepassID, purchased)
 		-- get the gamepass Info
 		local gamepassInfo = fetchProductInfo(gamepassID, Enum.InfoType.GamePass)
-		local object = {
-			plr = plr.Name,
-			userId = plr.UserId,
-			inGroup = checkInParentGroup(plr, gamepassInfo.Creator.CreatorTargetId, gamepassInfo.Creator.CreatorType),
-			gamepass_id = gamepassID,
-			gamepass_name = gamepassInfo.Name,
-			gamepass_price = gamepassInfo.PriceInRobux,
-			purchased = purchased,
-			UUID = HttpService:GenerateGUID(false),
-		}
-		mainLogger("/handle_gamepass", object)
-	end)
-	MarketplaceService.PromptPurchaseFinished:Connect(function(plr, productId, purchased)
+		-- Generate return object
+		mainLogger("/handle_purchase", TS.await(generateReturnObject(plr, gamepassID, purchased, "GamePass", gamepassInfo)))
+	end))
+	MarketplaceService.PromptPurchaseFinished:Connect(TS.async(function(plr, productId, purchased)
 		-- get the product Info
 		local productInfo = fetchProductInfo(productId, Enum.InfoType.Product)
-		local object = {
-			plr = plr.Name,
-			userId = plr.UserId,
-			inGroup = checkInParentGroup(plr, productInfo.Creator.CreatorTargetId, productInfo.Creator.CreatorType),
-			product_id = productId,
-			product_name = productInfo.Name,
-			product_price = productInfo.PriceInRobux,
-			purchased = purchased,
-			UUID = HttpService:GenerateGUID(false),
-		}
-		mainLogger("/handle_product", object)
-	end)
+		-- Generate return object
+		mainLogger("/handle_purchase", TS.await(generateReturnObject(plr, productId, purchased, "Product", productInfo)))
+	end))
 end)
 local _ = MarketplaceService
 return {

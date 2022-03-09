@@ -71,6 +71,12 @@ export default async function RovolutionAnalytica(projectID: string, apiKey: str
     PlayerJoinHook();
     serverVitalsHook(gameId);
 
+    game.BindToClose(() => {
+        mainLogger('/unregister_server', {
+            gameId,
+        });
+    });
+
     // Real time data stuff
     while (true) {
         let tps = await getServerVitals();

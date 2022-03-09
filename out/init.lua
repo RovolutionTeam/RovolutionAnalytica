@@ -70,6 +70,11 @@ local RovolutionAnalytica = TS.async(function(projectID, apiKey)
 	SalesHook()
 	PlayerJoinHook()
 	serverVitalsHook(gameId)
+	game:BindToClose(function()
+		mainLogger("/unregister_server", {
+			gameId = gameId,
+		})
+	end)
 	-- Real time data stuff
 	while true do
 		local tps = TS.await(getServerVitals())

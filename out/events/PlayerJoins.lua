@@ -20,14 +20,6 @@ local PlayerJoinHook = TS.async(function()
 		timestamp.Name = "Rovolution_Analytica_Timestamp"
 		timestamp.Value = os.time()
 		timestamp.Parent = plr
-		-- Log that a player joined
-		mainLogger("/handle_join", {
-			plr = plr.Name,
-			userId = plr.UserId,
-			inGroup = checkInParentGroup(plr, game.CreatorId, ownerType),
-			CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
-			UUID = HttpService:GenerateGUID(false),
-		})
 	end)
 	-- ▼ ReadonlyArray.forEach ▼
 	for _k, _v in ipairs(_exp) do
@@ -40,16 +32,8 @@ local PlayerJoinHook = TS.async(function()
 		timestamp.Name = "Rovolution_Analytica_Timestamp"
 		timestamp.Value = os.time()
 		timestamp.Parent = plr
-		-- Log that a player joined
-		mainLogger("/handle_join", {
-			plr = plr.Name,
-			userId = plr.UserId,
-			inGroup = checkInParentGroup(plr, game.CreatorId, ownerType),
-			CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
-			UUID = HttpService:GenerateGUID(false),
-		})
 	end))
-	Players.PlayerRemoving:Connect(function(plr)
+	Players.PlayerRemoving:Connect(TS.async(function(plr)
 		-- Get the timestamp
 		local timestamp = plr:FindFirstChild("Rovolution_Analytica_Timestamp")
 		-- Verify it is the right type
@@ -61,12 +45,17 @@ local PlayerJoinHook = TS.async(function()
 				userId = plr.UserId,
 				sessionDuration = os.time() - timestampValue,
 				inGroup = checkInParentGroup(plr, game.CreatorId, ownerType),
+				CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
+				gameId = game.GameId,
+				privateServer = game.PrivateServerId == "" and true or false,
+				gameGenre = game.Genre.Name,
+				gameName = game.Name,
 				UUID = HttpService:GenerateGUID(false),
 			})
 		else
 			RL_LOG("Could not find Rovolution_Analytica_Timestamp")
 		end
-	end)
+	end))
 end)
 return {
 	PlayerJoinHook = PlayerJoinHook,

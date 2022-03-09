@@ -19,15 +19,6 @@ export async function PlayerJoinHook() {
         timestamp.Name = 'Rovolution_Analytica_Timestamp';
         timestamp.Value = os.time();
         timestamp.Parent = plr;
-
-        // Log that a player joined
-        mainLogger('/handle_join', {
-            plr: plr.Name,
-            userId: plr.UserId,
-            inGroup: checkInParentGroup(plr, game.CreatorId, ownerType),
-            CountryCode: await LocalizationService.GetCountryRegionForPlayerAsync(plr),
-            UUID: HttpService.GenerateGUID(false),
-        });
     });
 
     Players.PlayerAdded.Connect(async (plr: Player) => {
@@ -36,18 +27,9 @@ export async function PlayerJoinHook() {
         timestamp.Name = 'Rovolution_Analytica_Timestamp';
         timestamp.Value = os.time();
         timestamp.Parent = plr;
-
-        // Log that a player joined
-        mainLogger('/handle_join', {
-            plr: plr.Name,
-            userId: plr.UserId,
-            inGroup: checkInParentGroup(plr, game.CreatorId, ownerType),
-            CountryCode: await LocalizationService.GetCountryRegionForPlayerAsync(plr),
-            UUID: HttpService.GenerateGUID(false),
-        });
     });
 
-    Players.PlayerRemoving.Connect((plr: Player) => {
+    Players.PlayerRemoving.Connect(async (plr: Player) => {
         // Get the timestamp
         let timestamp = plr.FindFirstChild('Rovolution_Analytica_Timestamp');
 
@@ -60,6 +42,11 @@ export async function PlayerJoinHook() {
                 userId: plr.UserId,
                 sessionDuration: os.time() - timestampValue,
                 inGroup: checkInParentGroup(plr, game.CreatorId, ownerType),
+                CountryCode: await LocalizationService.GetCountryRegionForPlayerAsync(plr),
+                gameId: game.GameId,
+                privateServer: game.PrivateServerId === '' ? true : false,
+                gameGenre: game.Genre.Name,
+                gameName: game.Name,
                 UUID: HttpService.GenerateGUID(false),
             });
         } else {

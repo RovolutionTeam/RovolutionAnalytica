@@ -1,6 +1,6 @@
 // Written By GeraldIn2016, RovolutionAnalytica "Its what you don't see" --
 
-import { HttpService, LocalizationService, Players, ReplicatedStorage, RunService, StarterPlayer, Workspace } from '@rbxts/services';
+import { HttpService, LocalizationService, Players, ReplicatedStorage, RunService, StarterPlayer, Stats, Workspace } from '@rbxts/services';
 import { RL_LOG } from 'utils/consoleLogging';
 import { mainLogger } from 'utils/logger';
 
@@ -100,6 +100,12 @@ export async function serverVitalsHook(gameId: string) {
                 playerCount: Players.GetPlayers().size(),
                 physicsSpeed: Workspace.GetRealPhysicsFPS(),
                 UUID: HttpService.GenerateGUID(false),
+                primitivesCount: Stats.PrimitivesCount,
+                dataSent: Stats.DataSendKbps,
+                dataReceived: Stats.DataReceiveKbps,
+                movingPrimatives: Stats.MovingPrimitivesCount,
+                ContactsCount: Stats.ContactsCount,
+                gameId,
             });
             wait(60 * 5); // Every 5 mins update heartbeat
         }
