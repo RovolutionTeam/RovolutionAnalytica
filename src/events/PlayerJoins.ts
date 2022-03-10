@@ -1,7 +1,8 @@
 // Written By GeraldIn2016, RovolutionAnalytica "Its what you don't see" --
 
-import { HttpService, LocalizationService, Players } from '@rbxts/services';
+import { HttpService, LocalizationService, MarketplaceService, Players } from '@rbxts/services';
 import { RL_LOG } from 'utils/consoleLogging';
+import { genre as GameMainGenre } from 'utils/genreFinder';
 import { checkInParentGroup } from 'utils/InParentGroup';
 import { mainLogger } from 'utils/logger';
 
@@ -36,6 +37,7 @@ export async function PlayerJoinHook() {
         // Verify it is the right type
         if (timestamp && timestamp.IsA('NumberValue')) {
             // Get the timestamp value
+            let gameName = MarketplaceService.GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name;
             let timestampValue = timestamp.Value;
             mainLogger('/handle_leave', {
                 plr: plr.Name,
@@ -45,8 +47,8 @@ export async function PlayerJoinHook() {
                 CountryCode: await LocalizationService.GetCountryRegionForPlayerAsync(plr),
                 gameId: game.GameId,
                 privateServer: game.PrivateServerId === '' ? true : false,
-                gameGenre: game.Genre.Name,
-                gameName: game.Name,
+                gameGenre: GameMainGenre,
+                gameName,
                 UUID: HttpService.GenerateGUID(false),
             });
         } else {

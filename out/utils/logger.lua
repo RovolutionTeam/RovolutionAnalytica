@@ -39,4 +39,5 @@ local function mainLogger(typeOfReq, message)
 end
 return {
 	mainLogger = mainLogger,
+	root_api = root_api,
 }

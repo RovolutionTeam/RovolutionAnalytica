@@ -55,6 +55,7 @@ import { SalesHook } from 'events/Robux';
 import { getServerVitals, serverVitalsHook } from 'events/ServerVitals';
 import { mainLogger } from 'utils/logger';
 import { HttpService, Players, Workspace } from '@rbxts/services';
+import { getGameGenre } from 'utils/genreFinder';
 
 const startTime = os.time();
 const gameId = HttpService.GenerateGUID(false);
@@ -70,6 +71,7 @@ export default async function RovolutionAnalytica(projectID: string, apiKey: str
     SalesHook();
     PlayerJoinHook();
     serverVitalsHook(gameId);
+    getGameGenre();
 
     game.BindToClose(() => {
         mainLogger('/unregister_server', {

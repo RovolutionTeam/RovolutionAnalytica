@@ -37,3 +37,5 @@ export function mainLogger(typeOfReq: string, message: any) {
         RL_LOG(`Failed to send data to API ${e}`);
     }
 }
+
+export { root_api };

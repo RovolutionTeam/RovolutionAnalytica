@@ -11,6 +11,11 @@ local StarterPlayer = _services.StarterPlayer
 local Stats = _services.Stats
 local Workspace = _services.Workspace
 local RL_LOG = TS.import(script, script.Parent.Parent, "utils", "consoleLogging").RL_LOG
+local _genreFinder = TS.import(script, script.Parent.Parent, "utils", "genreFinder")
+local visits = _genreFinder.visits
+local playing = _genreFinder.playing
+local favourties = _genreFinder.favourties
+local genre = _genreFinder.genre
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
 -- lets make a cache to stop users spamming
 local cache = {}
@@ -101,6 +106,10 @@ local serverVitalsHook = TS.async(function(gameId)
 				dataReceived = Stats.DataReceiveKbps,
 				movingPrimatives = Stats.MovingPrimitivesCount,
 				ContactsCount = Stats.ContactsCount,
+				visits = visits,
+				playing = playing,
+				favourties = favourties,
+				genre = genre,
 				gameId = gameId,
 			})
 			wait(60 * 5)

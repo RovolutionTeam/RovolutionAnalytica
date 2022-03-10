@@ -4,8 +4,10 @@ local TS = require(script.Parent.Parent.include.RuntimeLib)
 local _services = TS.import(script, TS.getModule(script, "@rbxts", "services"))
 local HttpService = _services.HttpService
 local LocalizationService = _services.LocalizationService
+local MarketplaceService = _services.MarketplaceService
 local Players = _services.Players
 local RL_LOG = TS.import(script, script.Parent.Parent, "utils", "consoleLogging").RL_LOG
+local GameMainGenre = TS.import(script, script.Parent.Parent, "utils", "genreFinder").genre
 local checkInParentGroup = TS.import(script, script.Parent.Parent, "utils", "InParentGroup").checkInParentGroup
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
 -- This handles players joining and leaving --
@@ -39,6 +41,7 @@ local PlayerJoinHook = TS.async(function()
 		-- Verify it is the right type
 		if timestamp and timestamp:IsA("NumberValue") then
 			-- Get the timestamp value
+			local gameName = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name
 			local timestampValue = timestamp.Value
 			mainLogger("/handle_leave", {
 				plr = plr.Name,
@@ -48,8 +51,8 @@ local PlayerJoinHook = TS.async(function()
 				CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
 				gameId = game.GameId,
 				privateServer = game.PrivateServerId == "" and true or false,
-				gameGenre = game.Genre.Name,
-				gameName = game.Name,
+				gameGenre = GameMainGenre,
+				gameName = gameName,
 				UUID = HttpService:GenerateGUID(false),
 			})
 		else

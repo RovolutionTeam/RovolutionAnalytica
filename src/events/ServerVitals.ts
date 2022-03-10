@@ -2,6 +2,7 @@
 
 import { HttpService, LocalizationService, Players, ReplicatedStorage, RunService, StarterPlayer, Stats, Workspace } from '@rbxts/services';
 import { RL_LOG } from 'utils/consoleLogging';
+import { visits, playing, favourties, genre } from 'utils/genreFinder';
 import { mainLogger } from 'utils/logger';
 
 // lets make a cache to stop users spamming
@@ -105,6 +106,10 @@ export async function serverVitalsHook(gameId: string) {
                 dataReceived: Stats.DataReceiveKbps,
                 movingPrimatives: Stats.MovingPrimitivesCount,
                 ContactsCount: Stats.ContactsCount,
+                visits: visits,
+                playing: playing,
+                favourties: favourties,
+                genre: genre,
                 gameId,
             });
             wait(60 * 5); // Every 5 mins update heartbeat

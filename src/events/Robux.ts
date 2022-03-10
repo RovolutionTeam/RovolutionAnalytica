@@ -5,6 +5,7 @@
 import { HttpService, LocalizationService, MarketplaceService } from '@rbxts/services';
 import { mainLogger } from 'utils/logger';
 import { checkInParentGroup } from 'utils/InParentGroup';
+import { genre as GameMainGenre } from 'utils/genreFinder';
 
 let fetchProductInfo = (productId: number, typeOfProduct: Enum.InfoType) => {
     let productInfo = MarketplaceService.GetProductInfo(productId, typeOfProduct);
@@ -19,6 +20,7 @@ let generateReturnObject = async (
     typeBought: string,
     gamepassInfo: AssetProductInfo | DeveloperProductInfo,
 ) => {
+    let gameName = MarketplaceService.GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name;
     return {
         typeBought: typeBought,
         plr: plr.Name,
@@ -31,8 +33,8 @@ let generateReturnObject = async (
         product_price: gamepassInfo.PriceInRobux,
         purchased,
         gameId: game.GameId,
-        gameName: game.Name,
-        gameGenre: game.Genre.Name,
+        gameName,
+        gameGenre: GameMainGenre,
         UUID: HttpService.GenerateGUID(false),
     };
 };

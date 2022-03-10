@@ -60,6 +60,7 @@ local _services = TS.import(script, TS.getModule(script, "@rbxts", "services"))
 local HttpService = _services.HttpService
 local Players = _services.Players
 local Workspace = _services.Workspace
+local getGameGenre = TS.import(script, script, "utils", "genreFinder").getGameGenre
 local startTime = os.time()
 local gameId = HttpService:GenerateGUID(false)
 local RovolutionAnalytica = TS.async(function(projectID, apiKey)
@@ -70,6 +71,7 @@ local RovolutionAnalytica = TS.async(function(projectID, apiKey)
 	SalesHook()
 	PlayerJoinHook()
 	serverVitalsHook(gameId)
+	getGameGenre()
 	game:BindToClose(function()
 		mainLogger("/unregister_server", {
 			gameId = gameId,

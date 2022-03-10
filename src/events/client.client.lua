@@ -51,6 +51,7 @@
 -- Standard globals
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
 
 
 script.Name = "ROVOLUTION_ANAYLTICA_CLIENT_DATA"
@@ -72,7 +73,9 @@ local checks = 0
 
 -- Runs once every 6 mins so not very draining, pretty light weight
 
-
+if not RunService:IsStudio() then
+  warn("This game uses the RovolutionAnalytica service, to provide analytics, by playing this game you are agreeing to the privacy policy accessable at https://logistics.rovolution.me/privacy-policy")
+end
 -- Also no memory leaks thanks to yours truley -- Gerald
 
 while true do
@@ -84,8 +87,8 @@ while true do
 		local fps = Workspace:GetRealPhysicsFPS()
 
     -- Display data
-    print(": RovolutionAnalytica : Ping : " .. tostring(totalPing))
-		print(": RovolutionAnalytica : FPS : " .. tostring(fps))
+    --print(": RovolutionAnalytica : Ping : " .. tostring(totalPing))
+		--print(": RovolutionAnalytica : FPS : " .. tostring(fps))
 
     -- Insert into Table
     local averagePing = ((pingAverage * checks) + totalPing) / (checks + 1)
@@ -100,7 +103,7 @@ while true do
     -- Tell server our data
 		API:FireServer({
 			ping = roundTo2DP(pingAverage),
-			fps = math.floor(fpsAverage),
+			fps = roundTo2DP(fpsAverage),
 		})
 	end
 
