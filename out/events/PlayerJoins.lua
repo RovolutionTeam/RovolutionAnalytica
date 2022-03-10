@@ -11,6 +11,7 @@ local GameMainGenre = TS.import(script, script.Parent.Parent, "utils", "genreFin
 local checkInParentGroup = TS.import(script, script.Parent.Parent, "utils", "InParentGroup").checkInParentGroup
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
 -- This handles players joining and leaving --
+local gameName = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name
 local ownerType = game.CreatorType == Enum.CreatorType.User and "User" or "Group"
 local PlayerJoinHook = TS.async(function()
 	-- Ok we want to track session length
@@ -41,7 +42,6 @@ local PlayerJoinHook = TS.async(function()
 		-- Verify it is the right type
 		if timestamp and timestamp:IsA("NumberValue") then
 			-- Get the timestamp value
-			local gameName = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name
 			local timestampValue = timestamp.Value
 			mainLogger("/handle_leave", {
 				plr = plr.Name,

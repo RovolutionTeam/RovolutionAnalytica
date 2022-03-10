@@ -9,12 +9,12 @@ local MarketplaceService = _services.MarketplaceService
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
 local checkInParentGroup = TS.import(script, script.Parent.Parent, "utils", "InParentGroup").checkInParentGroup
 local GameMainGenre = TS.import(script, script.Parent.Parent, "utils", "genreFinder").genre
+local gameName = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name
 local fetchProductInfo = function(productId, typeOfProduct)
 	local productInfo = MarketplaceService:GetProductInfo(productId, typeOfProduct)
 	return productInfo
 end
 local generateReturnObject = TS.async(function(plr, MainId, purchased, typeBought, gamepassInfo)
-	local gameName = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name
 	return {
 		typeBought = typeBought,
 		plr = plr.Name,

@@ -119,6 +119,7 @@ local GameMainGenre = TS.import(script, script.Parent.Parent, "utils", "genreFin
 local checkInParentGroup = TS.import(script, script.Parent.Parent, "utils", "InParentGroup").checkInParentGroup
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
 -- This handles players joining and leaving --
+local gameName = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name
 local ownerType = game.CreatorType == Enum.CreatorType.User and "User" or "Group"
 local PlayerJoinHook = TS.async(function()
 	-- Ok we want to track session length
@@ -149,7 +150,6 @@ local PlayerJoinHook = TS.async(function()
 		-- Verify it is the right type
 		if timestamp and timestamp:IsA("NumberValue") then
 			-- Get the timestamp value
-			local gameName = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name
 			local timestampValue = timestamp.Value
 			mainLogger("/handle_leave", {
 				plr = plr.Name,
@@ -188,12 +188,12 @@ local MarketplaceService = _services.MarketplaceService
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
 local checkInParentGroup = TS.import(script, script.Parent.Parent, "utils", "InParentGroup").checkInParentGroup
 local GameMainGenre = TS.import(script, script.Parent.Parent, "utils", "genreFinder").genre
+local gameName = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name
 local fetchProductInfo = function(productId, typeOfProduct)
 	local productInfo = MarketplaceService:GetProductInfo(productId, typeOfProduct)
 	return productInfo
 end
 local generateReturnObject = TS.async(function(plr, MainId, purchased, typeBought, gamepassInfo)
-	local gameName = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name
 	return {
 		typeBought = typeBought,
 		plr = plr.Name,
@@ -479,8 +479,51 @@ end
 ]]></string>
         </Properties>
       </Item>
+      <Item class="ModuleScript" referent="6">
+        <Properties>
+          <string name="Name">invites</string>
+          <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
+local TS = require(script.Parent.Parent.include.RuntimeLib)
+local _services = TS.import(script, TS.getModule(script, "@rbxts", "services"))
+local HttpService = _services.HttpService
+local LocalizationService = _services.LocalizationService
+local MarketplaceService = _services.MarketplaceService
+local SocialService = _services.SocialService
+local genre = TS.import(script, script.Parent.Parent, "utils", "genreFinder").genre
+local checkInParentGroup = TS.import(script, script.Parent.Parent, "utils", "InParentGroup").checkInParentGroup
+local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
+local gameName = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name
+local ownerType = game.CreatorType == Enum.CreatorType.User and "User" or "Group"
+local gameInvites = TS.async(function()
+	SocialService.GameInvitePromptClosed:Connect(TS.async(function(plr, invited)
+		local timestamp = plr:FindFirstChild("Rovolution_Analytica_Timestamp")
+		-- Verify it is the right type
+		if not (timestamp and timestamp:IsA("NumberValue")) then
+			return nil
+		end
+		mainLogger("/game_invites", {
+			currentSession = os.time() - timestamp.Value,
+			plr = plr.Name,
+			userId = plr.UserId,
+			invited = invited,
+			UUID = HttpService:GenerateGUID(false),
+			privateServer = game.PrivateServerId == "" and true or false,
+			gameId = game.GameId,
+			gameName = gameName,
+			gameGenre = genre,
+			CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
+			inGroup = checkInParentGroup(plr, game.CreatorId, ownerType),
+		})
+	end))
+end)
+return {
+	gameInvites = gameInvites,
+}
+]]></string>
+        </Properties>
+      </Item>
     </Item>
-    <Item class="ModuleScript" referent="6">
+    <Item class="ModuleScript" referent="7">
       <Properties>
         <string name="Name">globals</string>
         <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
@@ -504,11 +547,11 @@ return {
 ]]></string>
       </Properties>
     </Item>
-    <Item class="Folder" referent="7">
+    <Item class="Folder" referent="8">
       <Properties>
         <string name="Name">utils</string>
       </Properties>
-      <Item class="ModuleScript" referent="8">
+      <Item class="ModuleScript" referent="9">
         <Properties>
           <string name="Name">InParentGroup</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
@@ -525,7 +568,7 @@ return {
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="9">
+      <Item class="ModuleScript" referent="10">
         <Properties>
           <string name="Name">consoleLogging</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
@@ -538,7 +581,7 @@ return {
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="10">
+      <Item class="ModuleScript" referent="11">
         <Properties>
           <string name="Name">genreFinder</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
@@ -588,7 +631,7 @@ return exports
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="11">
+      <Item class="ModuleScript" referent="12">
         <Properties>
           <string name="Name">logger</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
@@ -638,11 +681,11 @@ return {
         </Properties>
       </Item>
     </Item>
-    <Item class="Folder" referent="12">
+    <Item class="Folder" referent="13">
       <Properties>
         <string name="Name">include</string>
       </Properties>
-      <Item class="ModuleScript" referent="13">
+      <Item class="ModuleScript" referent="14">
         <Properties>
           <string name="Name">Promise</string>
           <string name="Source"><![CDATA[--[[
@@ -2050,7 +2093,7 @@ return Promise
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="14">
+      <Item class="ModuleScript" referent="15">
         <Properties>
           <string name="Name">RuntimeLib</string>
           <string name="Source"><![CDATA[local Promise = require(script.Parent.Promise)
@@ -2285,21 +2328,21 @@ return TS
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="15">
+      <Item class="Folder" referent="16">
         <Properties>
           <string name="Name">node_modules</string>
         </Properties>
-        <Item class="Folder" referent="16">
+        <Item class="Folder" referent="17">
           <Properties>
             <string name="Name">compiler-types</string>
           </Properties>
-          <Item class="Folder" referent="17">
+          <Item class="Folder" referent="18">
             <Properties>
               <string name="Name">types</string>
             </Properties>
           </Item>
         </Item>
-        <Item class="ModuleScript" referent="18">
+        <Item class="ModuleScript" referent="19">
           <Properties>
             <string name="Name">services</string>
             <string name="Source"><![CDATA[return setmetatable({}, {
@@ -2312,15 +2355,15 @@ return TS
 ]]></string>
           </Properties>
         </Item>
-        <Item class="Folder" referent="19">
+        <Item class="Folder" referent="20">
           <Properties>
             <string name="Name">types</string>
           </Properties>
-          <Item class="Folder" referent="20">
+          <Item class="Folder" referent="21">
             <Properties>
               <string name="Name">include</string>
             </Properties>
-            <Item class="Folder" referent="21">
+            <Item class="Folder" referent="22">
               <Properties>
                 <string name="Name">generated</string>
               </Properties>

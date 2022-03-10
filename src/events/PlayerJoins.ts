@@ -8,6 +8,8 @@ import { mainLogger } from 'utils/logger';
 
 // This handles players joining and leaving --
 
+let gameName = MarketplaceService.GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name;
+
 const ownerType = game.CreatorType === Enum.CreatorType.User ? 'User' : 'Group';
 
 export async function PlayerJoinHook() {
@@ -37,7 +39,7 @@ export async function PlayerJoinHook() {
         // Verify it is the right type
         if (timestamp && timestamp.IsA('NumberValue')) {
             // Get the timestamp value
-            let gameName = MarketplaceService.GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name;
+
             let timestampValue = timestamp.Value;
             mainLogger('/handle_leave', {
                 plr: plr.Name,
