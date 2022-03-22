@@ -1,15 +1,34 @@
 -- Compiled with roblox-ts v1.2.3
 local TS = require(script.Parent.Parent.include.RuntimeLib)
-local exports = {}
 local HttpService = TS.import(script, TS.getModule(script, "@rbxts", "services")).HttpService
 local RL_LOG = TS.import(script, script.Parent, "consoleLogging").RL_LOG
 local root_api = TS.import(script, script.Parent, "logger").root_api
 local fetchGlobals = TS.import(script, script.Parent.Parent, "globals").fetchGlobals
 local url = "https://games.roblox.com/v1/games?universeIds="
-exports.genre = nil
-exports.visits = nil
-exports.favourties = nil
-exports.playing = nil
+local genreTemp = nil
+local visitsTemp = nil
+local favourtiesTemp = nil
+local playingTemp = nil
+local likesTemp = nil
+local dislikesTemp = nil
+local function genre()
+	return genreTemp
+end
+local function visits()
+	return visitsTemp
+end
+local function favourties()
+	return favourtiesTemp
+end
+local function playing()
+	return playingTemp
+end
+local function likes()
+	return likesTemp
+end
+local function dislikes()
+	return dislikesTemp
+end
 local getGameGenre = TS.async(function()
 	local _binding = fetchGlobals()
 	local ProjectID = _binding.ProjectID
@@ -30,15 +49,23 @@ local getGameGenre = TS.async(function()
 	if _exitType then
 		return unpack(_returns)
 	end
-	print(data)
-	if #data.data == 0 then
+	if data.data == nil then
 		RL_LOG("Failed to find game genre!")
 		return nil
 	end
-	exports.genre = data.data[1].genre
-	exports.visits = data.data[1].visits
-	exports.favourties = data.data[1].favoritedCount
-	exports.playing = data.data[1].playing
+	genreTemp = data.data.genre
+	visitsTemp = data.data.visits
+	favourtiesTemp = data.data.favoritedCount
+	playingTemp = data.data.playing
+	likesTemp = data.data.upVotes
+	dislikesTemp = data.data.downVotes
 end)
-exports.getGameGenre = getGameGenre
-return exports
+return {
+	genre = genre,
+	visits = visits,
+	favourties = favourties,
+	playing = playing,
+	likes = likes,
+	dislikes = dislikes,
+	getGameGenre = getGameGenre,
+}

@@ -15,14 +15,17 @@ local gameName = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.A
 local ownerType = game.CreatorType == Enum.CreatorType.User and "User" or "Group"
 local PlayerJoinHook = TS.async(function()
 	-- Ok we want to track session length
-	-- Lets also record all players are in the game when we start up
-	local _exp = Players:GetPlayers()
-	local _arg0 = TS.async(function(plr)
+	local handlePlayerJoin = function(plr)
 		-- Create a timestamp element
 		local timestamp = Instance.new("NumberValue")
 		timestamp.Name = "Rovolution_Analytica_Timestamp"
 		timestamp.Value = os.time()
 		timestamp.Parent = plr
+	end
+	-- Lets also record all players are in the game when we start up
+	local _exp = Players:GetPlayers()
+	local _arg0 = TS.async(function(plr)
+		handlePlayerJoin(plr)
 	end)
 	-- ▼ ReadonlyArray.forEach ▼
 	for _k, _v in ipairs(_exp) do
@@ -30,11 +33,7 @@ local PlayerJoinHook = TS.async(function()
 	end
 	-- ▲ ReadonlyArray.forEach ▲
 	Players.PlayerAdded:Connect(TS.async(function(plr)
-		-- Create a timestamp element
-		local timestamp = Instance.new("NumberValue")
-		timestamp.Name = "Rovolution_Analytica_Timestamp"
-		timestamp.Value = os.time()
-		timestamp.Parent = plr
+		handlePlayerJoin(plr)
 	end))
 	Players.PlayerRemoving:Connect(TS.async(function(plr)
 		-- Get the timestamp
@@ -43,18 +42,26 @@ local PlayerJoinHook = TS.async(function()
 		if timestamp and timestamp:IsA("NumberValue") then
 			-- Get the timestamp value
 			local timestampValue = timestamp.Value
-			mainLogger("/handle_leave", {
+			local _ptr = {
 				plr = plr.Name,
 				userId = plr.UserId,
 				sessionDuration = os.time() - timestampValue,
 				inGroup = checkInParentGroup(plr, game.CreatorId, ownerType),
 				CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
 				gameId = game.GameId,
-				privateServer = game.PrivateServerId == "" and true or false,
-				gameGenre = GameMainGenre,
-				gameName = gameName,
-				UUID = HttpService:GenerateGUID(false),
-			})
+			}
+			local _left = "privateServer"
+			local _result
+			if game.PrivateServerId == "" then
+				_result = false
+			else
+				_result = true
+			end
+			_ptr[_left] = _result
+			_ptr.gameGenre = GameMainGenre()
+			_ptr.gameName = gameName
+			_ptr.UUID = HttpService:GenerateGUID(false)
+			mainLogger("/handle_leave", _ptr)
 		else
 			RL_LOG("Could not find Rovolution_Analytica_Timestamp")
 		end

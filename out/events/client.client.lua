@@ -52,11 +52,13 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 
 script.Name = "ROVOLUTION_ANAYLTICA_CLIENT_DATA"
 local API = ReplicatedStorage:WaitForChild("ROVOLUTION_ANAYLTICA_CLIENT_DATA")
 local ping = ReplicatedStorage:WaitForChild("ROVOLUTION_ANAYLTICA_PING_TEST")
+local deviceType = ReplicatedStorage:WaitForChild("ROVOLUTION_ANAYLTICA_DEVICE_DATA")
 
 function roundTo2DP(value)
 	value *= 100
@@ -69,6 +71,34 @@ end
 local pingAverage = 0
 local fpsAverage = 0
 local checks = 0
+
+
+-- Device Type
+function getEnabled()
+	return {
+		["Keyboard"] = UserInputService.KeyboardEnabled;
+		["Gamepad"] = UserInputService.GamepadEnabled;
+		["Touch"] = UserInputService.TouchEnabled;
+	};
+end
+
+function getPlatform()
+	local res = getEnabled();
+
+	local isMobile = res.Touch and not res.Gamepad and not res.Keyboard
+	local isConsole = res.Gamepad and not res.Touch and not res	.Keyboard
+
+	if isMobile then
+		return "Mobile"
+	elseif isConsole then
+		return "Console"
+	else
+		return "PC"
+	end
+end
+
+deviceType:FireServer(getPlatform())
+
 
 
 -- Runs once every 6 mins so not very draining, pretty light weight

@@ -6,6 +6,7 @@ import { HttpService, LocalizationService, MarketplaceService } from '@rbxts/ser
 import { mainLogger } from 'utils/logger';
 import { checkInParentGroup } from 'utils/InParentGroup';
 import { genre as GameMainGenre } from 'utils/genreFinder';
+import { getUserSessionDuration } from 'utils/sessionDuration';
 
 let gameName = MarketplaceService.GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name;
 
@@ -27,7 +28,7 @@ let generateReturnObject = async (
         plr: plr.Name,
         userId: plr.UserId,
         inGroup: checkInParentGroup(plr, gamepassInfo.Creator.CreatorTargetId, gamepassInfo.Creator.CreatorType),
-        privateServer: game.PrivateServerId === '' ? true : false,
+        privateServer: game.PrivateServerId === '' ? false : true,
         CountryCode: await LocalizationService.GetCountryRegionForPlayerAsync(plr),
         product_id: MainId,
         product_name: gamepassInfo.Name,
@@ -35,8 +36,9 @@ let generateReturnObject = async (
         purchased,
         gameId: game.GameId,
         gameName,
-        gameGenre: GameMainGenre,
+        gameGenre: GameMainGenre(),
         UUID: HttpService.GenerateGUID(false),
+        currentSession: getUserSessionDuration(plr),
     };
 };
 

@@ -2,13 +2,22 @@
 
 import { HttpService, LocalizationService, Players, ReplicatedStorage, RunService, StarterPlayer, Stats, Workspace } from '@rbxts/services';
 import { RL_LOG } from 'utils/consoleLogging';
-import { visits, playing, favourties, genre } from 'utils/genreFinder';
+import { visits, playing, favourties, genre, likes, dislikes } from 'utils/genreFinder';
 import { mainLogger } from 'utils/logger';
 
 // lets make a cache to stop users spamming
 let cache: {
     [key: string]: number;
 } = {};
+
+// Handle total visits
+let visitObject: {
+    [key: string]: number;
+} = {
+    PC: 0,
+    Mobile: 0,
+    Console: 0,
+};
 
 export const getServerVitals = () => {
     let prom = () => {
@@ -44,6 +53,9 @@ export async function serverVitalsHook(gameId: string) {
     let remoteEvent = new Instance('RemoteEvent', ReplicatedStorage);
     remoteEvent.Name = 'ROVOLUTION_ANAYLTICA_CLIENT_DATA';
 
+    let DeviceType = new Instance('RemoteEvent', ReplicatedStorage);
+    DeviceType.Name = 'ROVOLUTION_ANAYLTICA_DEVICE_DATA';
+
     remoteEvent.OnServerEvent.Connect(async (plr: Player, data: any) => {
         // Check in cache
         if (cache[plr.UserId] === undefined || cache[plr.UserId] + 5 * 60 < os.time()) {
@@ -72,6 +84,17 @@ export async function serverVitalsHook(gameId: string) {
         }
     });
 
+    DeviceType.OnServerEvent.Connect(async (plr: Player, data: any) => {
+        if (typeIs(data, 'string')) {
+            visitObject[data] = visitObject[data] + 1;
+
+            // Now add that to the player
+            let deviceType = new Instance('StringValue', plr);
+            deviceType.Name = 'ROVOLUTION_DEVICE_TYPE';
+            deviceType.Value = data;
+        }
+    });
+
     let client = script.Parent?.FindFirstChild('client');
     if (client) {
         client.Parent = StarterPlayer.FindFirstChild('StarterPlayerScripts');
@@ -95,6 +118,7 @@ export async function serverVitalsHook(gameId: string) {
         wait(60); // Wait 60 seconds to calm down
         while (true) {
             let heartBeat = await getServerVitals();
+            print(favourties());
 
             mainLogger('/server_vitals', {
                 heartBeat,
@@ -106,11 +130,14 @@ export async function serverVitalsHook(gameId: string) {
                 dataReceived: Stats.DataReceiveKbps,
                 movingPrimatives: Stats.MovingPrimitivesCount,
                 ContactsCount: Stats.ContactsCount,
-                visits: visits,
-                playing: playing,
-                favourties: favourties,
-                genre: genre,
+                ...visitObject,
+                visits: visits(),
+                playing: playing(),
+                favourties: favourties(),
+                genre: genre(),
                 gameId,
+                likes: likes(),
+                dislikes: dislikes(),
             });
             wait(60 * 5); // Every 5 mins update heartbeat
         }

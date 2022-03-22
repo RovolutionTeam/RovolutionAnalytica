@@ -16,9 +16,17 @@ local visits = _genreFinder.visits
 local playing = _genreFinder.playing
 local favourties = _genreFinder.favourties
 local genre = _genreFinder.genre
+local likes = _genreFinder.likes
+local dislikes = _genreFinder.dislikes
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
 -- lets make a cache to stop users spamming
 local cache = {}
+-- Handle total visits
+local visitObject = {
+	PC = 0,
+	Mobile = 0,
+	Console = 0,
+}
 local getServerVitals = function()
 	local prom = function()
 		local connection
@@ -51,6 +59,8 @@ local serverVitalsHook = TS.async(function(gameId)
 	-- first create a remote event
 	local remoteEvent = Instance.new("RemoteEvent", ReplicatedStorage)
 	remoteEvent.Name = "ROVOLUTION_ANAYLTICA_CLIENT_DATA"
+	local DeviceType = Instance.new("RemoteEvent", ReplicatedStorage)
+	DeviceType.Name = "ROVOLUTION_ANAYLTICA_DEVICE_DATA"
 	remoteEvent.OnServerEvent:Connect(TS.async(function(plr, data)
 		-- Check in cache
 		if cache[plr.UserId] == nil or cache[plr.UserId] + 5 * 60 < os.time() then
@@ -71,6 +81,15 @@ local serverVitalsHook = TS.async(function(gameId)
 			-- We are in the cache
 			RL_LOG("Potential user spamming API, " .. plr.Name .. " is in the prefetch cache!")
 			return nil
+		end
+	end))
+	DeviceType.OnServerEvent:Connect(TS.async(function(plr, data)
+		if type(data) == "string" then
+			visitObject[data] = visitObject[data] + 1
+			-- Now add that to the player
+			local deviceType = Instance.new("StringValue", plr)
+			deviceType.Name = "ROVOLUTION_DEVICE_TYPE"
+			deviceType.Value = data
 		end
 	end))
 	local _client = script.Parent
@@ -96,7 +115,8 @@ local serverVitalsHook = TS.async(function(gameId)
 		wait(60)
 		while true do
 			local heartBeat = TS.await(getServerVitals())
-			mainLogger("/server_vitals", {
+			print(favourties())
+			local _ptr = {
 				heartBeat = heartBeat,
 				playerCount = #Players:GetPlayers(),
 				physicsSpeed = Workspace:GetRealPhysicsFPS(),
@@ -106,12 +126,20 @@ local serverVitalsHook = TS.async(function(gameId)
 				dataReceived = Stats.DataReceiveKbps,
 				movingPrimatives = Stats.MovingPrimitivesCount,
 				ContactsCount = Stats.ContactsCount,
-				visits = visits,
-				playing = playing,
-				favourties = favourties,
-				genre = genre,
-				gameId = gameId,
-			})
+			}
+			if type(visitObject) == "table" then
+				for _k, _v in pairs(visitObject) do
+					_ptr[_k] = _v
+				end
+			end
+			_ptr.visits = visits()
+			_ptr.playing = playing()
+			_ptr.favourties = favourties()
+			_ptr.genre = genre()
+			_ptr.gameId = gameId
+			_ptr.likes = likes()
+			_ptr.dislikes = dislikes()
+			mainLogger("/server_vitals", _ptr)
 			wait(60 * 5)
 		end
 	end)()

@@ -71,11 +71,11 @@ local RovolutionAnalytica = TS.async(function(projectID, apiKey)
 	RL_LOG("RovolutionAnalytica is starting up.")
 	-- First setup globals
 	setupGlobals(projectID, apiKey)
+	getGameGenre()
 	-- Call all listening hooks
 	SalesHook()
 	PlayerJoinHook()
 	serverVitalsHook(gameId)
-	getGameGenre()
 	game:BindToClose(function()
 		mainLogger("/unregister_server", {
 			gameId = gameId,
@@ -123,14 +123,17 @@ local gameName = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.A
 local ownerType = game.CreatorType == Enum.CreatorType.User and "User" or "Group"
 local PlayerJoinHook = TS.async(function()
 	-- Ok we want to track session length
-	-- Lets also record all players are in the game when we start up
-	local _exp = Players:GetPlayers()
-	local _arg0 = TS.async(function(plr)
+	local handlePlayerJoin = function(plr)
 		-- Create a timestamp element
 		local timestamp = Instance.new("NumberValue")
 		timestamp.Name = "Rovolution_Analytica_Timestamp"
 		timestamp.Value = os.time()
 		timestamp.Parent = plr
+	end
+	-- Lets also record all players are in the game when we start up
+	local _exp = Players:GetPlayers()
+	local _arg0 = TS.async(function(plr)
+		handlePlayerJoin(plr)
 	end)
 	-- ▼ ReadonlyArray.forEach ▼
 	for _k, _v in ipairs(_exp) do
@@ -138,11 +141,7 @@ local PlayerJoinHook = TS.async(function()
 	end
 	-- ▲ ReadonlyArray.forEach ▲
 	Players.PlayerAdded:Connect(TS.async(function(plr)
-		-- Create a timestamp element
-		local timestamp = Instance.new("NumberValue")
-		timestamp.Name = "Rovolution_Analytica_Timestamp"
-		timestamp.Value = os.time()
-		timestamp.Parent = plr
+		handlePlayerJoin(plr)
 	end))
 	Players.PlayerRemoving:Connect(TS.async(function(plr)
 		-- Get the timestamp
@@ -151,18 +150,26 @@ local PlayerJoinHook = TS.async(function()
 		if timestamp and timestamp:IsA("NumberValue") then
 			-- Get the timestamp value
 			local timestampValue = timestamp.Value
-			mainLogger("/handle_leave", {
+			local _ptr = {
 				plr = plr.Name,
 				userId = plr.UserId,
 				sessionDuration = os.time() - timestampValue,
 				inGroup = checkInParentGroup(plr, game.CreatorId, ownerType),
 				CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
 				gameId = game.GameId,
-				privateServer = game.PrivateServerId == "" and true or false,
-				gameGenre = GameMainGenre,
-				gameName = gameName,
-				UUID = HttpService:GenerateGUID(false),
-			})
+			}
+			local _left = "privateServer"
+			local _result
+			if game.PrivateServerId == "" then
+				_result = false
+			else
+				_result = true
+			end
+			_ptr[_left] = _result
+			_ptr.gameGenre = GameMainGenre()
+			_ptr.gameName = gameName
+			_ptr.UUID = HttpService:GenerateGUID(false)
+			mainLogger("/handle_leave", _ptr)
 		else
 			RL_LOG("Could not find Rovolution_Analytica_Timestamp")
 		end
@@ -188,28 +195,38 @@ local MarketplaceService = _services.MarketplaceService
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
 local checkInParentGroup = TS.import(script, script.Parent.Parent, "utils", "InParentGroup").checkInParentGroup
 local GameMainGenre = TS.import(script, script.Parent.Parent, "utils", "genreFinder").genre
+local getUserSessionDuration = TS.import(script, script.Parent.Parent, "utils", "sessionDuration").getUserSessionDuration
 local gameName = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name
 local fetchProductInfo = function(productId, typeOfProduct)
 	local productInfo = MarketplaceService:GetProductInfo(productId, typeOfProduct)
 	return productInfo
 end
 local generateReturnObject = TS.async(function(plr, MainId, purchased, typeBought, gamepassInfo)
-	return {
+	local _ptr = {
 		typeBought = typeBought,
 		plr = plr.Name,
 		userId = plr.UserId,
 		inGroup = checkInParentGroup(plr, gamepassInfo.Creator.CreatorTargetId, gamepassInfo.Creator.CreatorType),
-		privateServer = game.PrivateServerId == "" and true or false,
-		CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
-		product_id = MainId,
-		product_name = gamepassInfo.Name,
-		product_price = gamepassInfo.PriceInRobux,
-		purchased = purchased,
-		gameId = game.GameId,
-		gameName = gameName,
-		gameGenre = GameMainGenre,
-		UUID = HttpService:GenerateGUID(false),
 	}
+	local _left = "privateServer"
+	local _result
+	if game.PrivateServerId == "" then
+		_result = false
+	else
+		_result = true
+	end
+	_ptr[_left] = _result
+	_ptr.CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr))
+	_ptr.product_id = MainId
+	_ptr.product_name = gamepassInfo.Name
+	_ptr.product_price = gamepassInfo.PriceInRobux
+	_ptr.purchased = purchased
+	_ptr.gameId = game.GameId
+	_ptr.gameName = gameName
+	_ptr.gameGenre = GameMainGenre()
+	_ptr.UUID = HttpService:GenerateGUID(false)
+	_ptr.currentSession = getUserSessionDuration(plr)
+	return _ptr
 end)
 local SalesHook = TS.async(function()
 	-- Gamepass Purchase or prompt failed
@@ -254,9 +271,17 @@ local visits = _genreFinder.visits
 local playing = _genreFinder.playing
 local favourties = _genreFinder.favourties
 local genre = _genreFinder.genre
+local likes = _genreFinder.likes
+local dislikes = _genreFinder.dislikes
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
 -- lets make a cache to stop users spamming
 local cache = {}
+-- Handle total visits
+local visitObject = {
+	PC = 0,
+	Mobile = 0,
+	Console = 0,
+}
 local getServerVitals = function()
 	local prom = function()
 		local connection
@@ -289,6 +314,8 @@ local serverVitalsHook = TS.async(function(gameId)
 	-- first create a remote event
 	local remoteEvent = Instance.new("RemoteEvent", ReplicatedStorage)
 	remoteEvent.Name = "ROVOLUTION_ANAYLTICA_CLIENT_DATA"
+	local DeviceType = Instance.new("RemoteEvent", ReplicatedStorage)
+	DeviceType.Name = "ROVOLUTION_ANAYLTICA_DEVICE_DATA"
 	remoteEvent.OnServerEvent:Connect(TS.async(function(plr, data)
 		-- Check in cache
 		if cache[plr.UserId] == nil or cache[plr.UserId] + 5 * 60 < os.time() then
@@ -309,6 +336,15 @@ local serverVitalsHook = TS.async(function(gameId)
 			-- We are in the cache
 			RL_LOG("Potential user spamming API, " .. plr.Name .. " is in the prefetch cache!")
 			return nil
+		end
+	end))
+	DeviceType.OnServerEvent:Connect(TS.async(function(plr, data)
+		if type(data) == "string" then
+			visitObject[data] = visitObject[data] + 1
+			-- Now add that to the player
+			local deviceType = Instance.new("StringValue", plr)
+			deviceType.Name = "ROVOLUTION_DEVICE_TYPE"
+			deviceType.Value = data
 		end
 	end))
 	local _client = script.Parent
@@ -334,7 +370,8 @@ local serverVitalsHook = TS.async(function(gameId)
 		wait(60)
 		while true do
 			local heartBeat = TS.await(getServerVitals())
-			mainLogger("/server_vitals", {
+			print(favourties())
+			local _ptr = {
 				heartBeat = heartBeat,
 				playerCount = #Players:GetPlayers(),
 				physicsSpeed = Workspace:GetRealPhysicsFPS(),
@@ -344,12 +381,20 @@ local serverVitalsHook = TS.async(function(gameId)
 				dataReceived = Stats.DataReceiveKbps,
 				movingPrimatives = Stats.MovingPrimitivesCount,
 				ContactsCount = Stats.ContactsCount,
-				visits = visits,
-				playing = playing,
-				favourties = favourties,
-				genre = genre,
-				gameId = gameId,
-			})
+			}
+			if type(visitObject) == "table" then
+				for _k, _v in pairs(visitObject) do
+					_ptr[_k] = _v
+				end
+			end
+			_ptr.visits = visits()
+			_ptr.playing = playing()
+			_ptr.favourties = favourties()
+			_ptr.genre = genre()
+			_ptr.gameId = gameId
+			_ptr.likes = likes()
+			_ptr.dislikes = dislikes()
+			mainLogger("/server_vitals", _ptr)
 			wait(60 * 5)
 		end
 	end)()
@@ -418,11 +463,13 @@ return {
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 
 script.Name = "ROVOLUTION_ANAYLTICA_CLIENT_DATA"
 local API = ReplicatedStorage:WaitForChild("ROVOLUTION_ANAYLTICA_CLIENT_DATA")
 local ping = ReplicatedStorage:WaitForChild("ROVOLUTION_ANAYLTICA_PING_TEST")
+local deviceType = ReplicatedStorage:WaitForChild("ROVOLUTION_ANAYLTICA_DEVICE_DATA")
 
 function roundTo2DP(value)
 	value *= 100
@@ -435,6 +482,34 @@ end
 local pingAverage = 0
 local fpsAverage = 0
 local checks = 0
+
+
+-- Device Type
+function getEnabled()
+	return {
+		["Keyboard"] = UserInputService.KeyboardEnabled;
+		["Gamepad"] = UserInputService.GamepadEnabled;
+		["Touch"] = UserInputService.TouchEnabled;
+	};
+end
+
+function getPlatform()
+	local res = getEnabled();
+
+	local isMobile = res.Touch and not res.Gamepad and not res.Keyboard
+	local isConsole = res.Gamepad and not res.Touch and not res	.Keyboard
+
+	if isMobile then
+		return "Mobile"
+	elseif isConsole then
+		return "Console"
+	else
+		return "PC"
+	end
+end
+
+deviceType:FireServer(getPlatform())
+
 
 
 -- Runs once every 6 mins so not very draining, pretty light weight
@@ -492,28 +567,32 @@ local SocialService = _services.SocialService
 local genre = TS.import(script, script.Parent.Parent, "utils", "genreFinder").genre
 local checkInParentGroup = TS.import(script, script.Parent.Parent, "utils", "InParentGroup").checkInParentGroup
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
+local getUserSessionDuration = TS.import(script, script.Parent.Parent, "utils", "sessionDuration").getUserSessionDuration
 local gameName = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name
 local ownerType = game.CreatorType == Enum.CreatorType.User and "User" or "Group"
 local gameInvites = TS.async(function()
 	SocialService.GameInvitePromptClosed:Connect(TS.async(function(plr, invited)
-		local timestamp = plr:FindFirstChild("Rovolution_Analytica_Timestamp")
-		-- Verify it is the right type
-		if not (timestamp and timestamp:IsA("NumberValue")) then
-			return nil
-		end
-		mainLogger("/game_invites", {
-			currentSession = os.time() - timestamp.Value,
+		local _ptr = {
+			currentSession = getUserSessionDuration(plr),
 			plr = plr.Name,
 			userId = plr.UserId,
 			invited = invited,
 			UUID = HttpService:GenerateGUID(false),
-			privateServer = game.PrivateServerId == "" and true or false,
-			gameId = game.GameId,
-			gameName = gameName,
-			gameGenre = genre,
-			CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
-			inGroup = checkInParentGroup(plr, game.CreatorId, ownerType),
-		})
+		}
+		local _left = "privateServer"
+		local _result
+		if game.PrivateServerId == "" then
+			_result = false
+		else
+			_result = true
+		end
+		_ptr[_left] = _result
+		_ptr.gameId = game.GameId
+		_ptr.gameName = gameName
+		_ptr.gameGenre = genre()
+		_ptr.CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr))
+		_ptr.inGroup = checkInParentGroup(plr, game.CreatorId, ownerType)
+		mainLogger("/game_invites", _ptr)
 	end))
 end)
 return {
@@ -583,19 +662,56 @@ return {
       </Item>
       <Item class="ModuleScript" referent="11">
         <Properties>
+          <string name="Name">deviceType</string>
+          <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
+local function fetchDeviceType(plr)
+	local deviceType = plr:FindFirstChild("ROVOLUTION_DEVICE_TYPE")
+	-- Verify it is the right type
+	if not (deviceType and deviceType:IsA("StringValue")) then
+		return "N/A"
+	end
+	return deviceType.Value
+end
+return {
+	fetchDeviceType = fetchDeviceType,
+}
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="12">
+        <Properties>
           <string name="Name">genreFinder</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
 local TS = require(script.Parent.Parent.include.RuntimeLib)
-local exports = {}
 local HttpService = TS.import(script, TS.getModule(script, "@rbxts", "services")).HttpService
 local RL_LOG = TS.import(script, script.Parent, "consoleLogging").RL_LOG
 local root_api = TS.import(script, script.Parent, "logger").root_api
 local fetchGlobals = TS.import(script, script.Parent.Parent, "globals").fetchGlobals
 local url = "https://games.roblox.com/v1/games?universeIds="
-exports.genre = nil
-exports.visits = nil
-exports.favourties = nil
-exports.playing = nil
+local genreTemp = nil
+local visitsTemp = nil
+local favourtiesTemp = nil
+local playingTemp = nil
+local likesTemp = nil
+local dislikesTemp = nil
+local function genre()
+	return genreTemp
+end
+local function visits()
+	return visitsTemp
+end
+local function favourties()
+	return favourtiesTemp
+end
+local function playing()
+	return playingTemp
+end
+local function likes()
+	return likesTemp
+end
+local function dislikes()
+	return dislikesTemp
+end
 local getGameGenre = TS.async(function()
 	local _binding = fetchGlobals()
 	local ProjectID = _binding.ProjectID
@@ -616,30 +732,41 @@ local getGameGenre = TS.async(function()
 	if _exitType then
 		return unpack(_returns)
 	end
-	print(data)
-	if #data.data == 0 then
+	if data.data == nil then
 		RL_LOG("Failed to find game genre!")
 		return nil
 	end
-	exports.genre = data.data[1].genre
-	exports.visits = data.data[1].visits
-	exports.favourties = data.data[1].favoritedCount
-	exports.playing = data.data[1].playing
+	genreTemp = data.data.genre
+	visitsTemp = data.data.visits
+	favourtiesTemp = data.data.favoritedCount
+	playingTemp = data.data.playing
+	likesTemp = data.data.upVotes
+	dislikesTemp = data.data.downVotes
 end)
-exports.getGameGenre = getGameGenre
-return exports
+return {
+	genre = genre,
+	visits = visits,
+	favourties = favourties,
+	playing = playing,
+	likes = likes,
+	dislikes = dislikes,
+	getGameGenre = getGameGenre,
+}
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="12">
+      <Item class="ModuleScript" referent="13">
         <Properties>
           <string name="Name">logger</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
 local TS = require(script.Parent.Parent.include.RuntimeLib)
 -- This file reports all data back to the RovolutionAnalytica API --
-local HttpService = TS.import(script, TS.getModule(script, "@rbxts", "services")).HttpService
+local _services = TS.import(script, TS.getModule(script, "@rbxts", "services"))
+local HttpService = _services.HttpService
+local Players = _services.Players
 local fetchGlobals = TS.import(script, script.Parent.Parent, "globals").fetchGlobals
 local RL_LOG = TS.import(script, script.Parent, "consoleLogging").RL_LOG
+local fetchDeviceType = TS.import(script, script.Parent, "deviceType").fetchDeviceType
 local root_api = "https://analytics.rovolution.me/api/v1"
 -- --------------------------------------------------------------------
 local function mainLogger(typeOfReq, message)
@@ -647,12 +774,38 @@ local function mainLogger(typeOfReq, message)
 	local ProjectID = _binding.ProjectID
 	local API_KEY = _binding.API_KEY
 	-- Create the data packet
-	local data = {
-		message = message,
-		timestamp = os.time() * 1000,
-		project_id = ProjectID,
-		api_key = API_KEY,
-	}
+	local include = {}
+	local _condition = message.userId ~= nil
+	if _condition then
+		local _userId = message.userId
+		_condition = type(_userId) == "number"
+	end
+	if _condition then
+		local plr = Players:GetPlayerByUserId(message.userId)
+		if plr then
+			include = {
+				deviceType = fetchDeviceType(plr),
+			}
+		end
+	end
+	local _ptr = {}
+	local _left = "message"
+	local _ptr_1 = {}
+	if type(message) == "table" then
+		for _k, _v in pairs(message) do
+			_ptr_1[_k] = _v
+		end
+	end
+	if type(include) == "table" then
+		for _k, _v in pairs(include) do
+			_ptr_1[_k] = _v
+		end
+	end
+	_ptr[_left] = _ptr_1
+	_ptr.timestamp = os.time() * 1000
+	_ptr.project_id = ProjectID
+	_ptr.api_key = API_KEY
+	local data = _ptr
 	local json_Serialised = ""
 	local _exitType, _returns = TS.try(function()
 		-- Serialise the JSON
@@ -680,12 +833,29 @@ return {
 ]]></string>
         </Properties>
       </Item>
+      <Item class="ModuleScript" referent="14">
+        <Properties>
+          <string name="Name">sessionDuration</string>
+          <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
+local function getUserSessionDuration(plr)
+	local timestamp = plr:FindFirstChild("Rovolution_Analytica_Timestamp")
+	if not (timestamp and timestamp:IsA("NumberValue")) then
+		return 0
+	end
+	return os.time() - timestamp.Value
+end
+return {
+	getUserSessionDuration = getUserSessionDuration,
+}
+]]></string>
+        </Properties>
+      </Item>
     </Item>
-    <Item class="Folder" referent="13">
+    <Item class="Folder" referent="15">
       <Properties>
         <string name="Name">include</string>
       </Properties>
-      <Item class="ModuleScript" referent="14">
+      <Item class="ModuleScript" referent="16">
         <Properties>
           <string name="Name">Promise</string>
           <string name="Source"><![CDATA[--[[
@@ -2093,7 +2263,7 @@ return Promise
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="15">
+      <Item class="ModuleScript" referent="17">
         <Properties>
           <string name="Name">RuntimeLib</string>
           <string name="Source"><![CDATA[local Promise = require(script.Parent.Promise)
@@ -2328,21 +2498,21 @@ return TS
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="16">
+      <Item class="Folder" referent="18">
         <Properties>
           <string name="Name">node_modules</string>
         </Properties>
-        <Item class="Folder" referent="17">
+        <Item class="Folder" referent="19">
           <Properties>
             <string name="Name">compiler-types</string>
           </Properties>
-          <Item class="Folder" referent="18">
+          <Item class="Folder" referent="20">
             <Properties>
               <string name="Name">types</string>
             </Properties>
           </Item>
         </Item>
-        <Item class="ModuleScript" referent="19">
+        <Item class="ModuleScript" referent="21">
           <Properties>
             <string name="Name">services</string>
             <string name="Source"><![CDATA[return setmetatable({}, {
@@ -2355,15 +2525,15 @@ return TS
 ]]></string>
           </Properties>
         </Item>
-        <Item class="Folder" referent="20">
+        <Item class="Folder" referent="22">
           <Properties>
             <string name="Name">types</string>
           </Properties>
-          <Item class="Folder" referent="21">
+          <Item class="Folder" referent="23">
             <Properties>
               <string name="Name">include</string>
             </Properties>
-            <Item class="Folder" referent="22">
+            <Item class="Folder" referent="24">
               <Properties>
                 <string name="Name">generated</string>
               </Properties>

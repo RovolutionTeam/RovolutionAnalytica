@@ -2,27 +2,23 @@ import { HttpService, LocalizationService, MarketplaceService, SocialService } f
 import { genre } from 'utils/genreFinder';
 import { checkInParentGroup } from 'utils/InParentGroup';
 import { mainLogger } from 'utils/logger';
+import { getUserSessionDuration } from 'utils/sessionDuration';
 
 let gameName = MarketplaceService.GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name;
 const ownerType = game.CreatorType === Enum.CreatorType.User ? 'User' : 'Group';
 
 export async function gameInvites() {
     SocialService.GameInvitePromptClosed.Connect(async (plr: Player, invited: number[]) => {
-        let timestamp = plr.FindFirstChild('Rovolution_Analytica_Timestamp');
-
-        // Verify it is the right type
-        if (!(timestamp && timestamp.IsA('NumberValue'))) return;
-
         mainLogger('/game_invites', {
-            currentSession: os.time() - timestamp.Value,
+            currentSession: getUserSessionDuration(plr),
             plr: plr.Name,
             userId: plr.UserId,
             invited,
             UUID: HttpService.GenerateGUID(false),
-            privateServer: game.PrivateServerId === '' ? true : false,
+            privateServer: game.PrivateServerId === '' ? false : true,
             gameId: game.GameId,
             gameName,
-            gameGenre: genre,
+            gameGenre: genre(),
             CountryCode: await LocalizationService.GetCountryRegionForPlayerAsync(plr),
             inGroup: checkInParentGroup(plr, game.CreatorId, ownerType),
         });

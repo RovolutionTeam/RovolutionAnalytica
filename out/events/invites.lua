@@ -8,28 +8,32 @@ local SocialService = _services.SocialService
 local genre = TS.import(script, script.Parent.Parent, "utils", "genreFinder").genre
 local checkInParentGroup = TS.import(script, script.Parent.Parent, "utils", "InParentGroup").checkInParentGroup
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
+local getUserSessionDuration = TS.import(script, script.Parent.Parent, "utils", "sessionDuration").getUserSessionDuration
 local gameName = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name
 local ownerType = game.CreatorType == Enum.CreatorType.User and "User" or "Group"
 local gameInvites = TS.async(function()
 	SocialService.GameInvitePromptClosed:Connect(TS.async(function(plr, invited)
-		local timestamp = plr:FindFirstChild("Rovolution_Analytica_Timestamp")
-		-- Verify it is the right type
-		if not (timestamp and timestamp:IsA("NumberValue")) then
-			return nil
-		end
-		mainLogger("/game_invites", {
-			currentSession = os.time() - timestamp.Value,
+		local _ptr = {
+			currentSession = getUserSessionDuration(plr),
 			plr = plr.Name,
 			userId = plr.UserId,
 			invited = invited,
 			UUID = HttpService:GenerateGUID(false),
-			privateServer = game.PrivateServerId == "" and true or false,
-			gameId = game.GameId,
-			gameName = gameName,
-			gameGenre = genre,
-			CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
-			inGroup = checkInParentGroup(plr, game.CreatorId, ownerType),
-		})
+		}
+		local _left = "privateServer"
+		local _result
+		if game.PrivateServerId == "" then
+			_result = false
+		else
+			_result = true
+		end
+		_ptr[_left] = _result
+		_ptr.gameId = game.GameId
+		_ptr.gameName = gameName
+		_ptr.gameGenre = genre()
+		_ptr.CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr))
+		_ptr.inGroup = checkInParentGroup(plr, game.CreatorId, ownerType)
+		mainLogger("/game_invites", _ptr)
 	end))
 end)
 return {

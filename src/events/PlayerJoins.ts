@@ -14,22 +14,21 @@ const ownerType = game.CreatorType === Enum.CreatorType.User ? 'User' : 'Group';
 
 export async function PlayerJoinHook() {
     // Ok we want to track session length
+    let handlePlayerJoin = (plr: Player) => {
+        // Create a timestamp element
+        let timestamp = new Instance('NumberValue');
+        timestamp.Name = 'Rovolution_Analytica_Timestamp';
+        timestamp.Value = os.time();
+        timestamp.Parent = plr;
+    };
 
     // Lets also record all players are in the game when we start up
     Players.GetPlayers().forEach(async (plr: Player) => {
-        // Create a timestamp element
-        let timestamp = new Instance('NumberValue');
-        timestamp.Name = 'Rovolution_Analytica_Timestamp';
-        timestamp.Value = os.time();
-        timestamp.Parent = plr;
+        handlePlayerJoin(plr);
     });
 
     Players.PlayerAdded.Connect(async (plr: Player) => {
-        // Create a timestamp element
-        let timestamp = new Instance('NumberValue');
-        timestamp.Name = 'Rovolution_Analytica_Timestamp';
-        timestamp.Value = os.time();
-        timestamp.Parent = plr;
+        handlePlayerJoin(plr);
     });
 
     Players.PlayerRemoving.Connect(async (plr: Player) => {
@@ -48,8 +47,8 @@ export async function PlayerJoinHook() {
                 inGroup: checkInParentGroup(plr, game.CreatorId, ownerType),
                 CountryCode: await LocalizationService.GetCountryRegionForPlayerAsync(plr),
                 gameId: game.GameId,
-                privateServer: game.PrivateServerId === '' ? true : false,
-                gameGenre: GameMainGenre,
+                privateServer: game.PrivateServerId === '' ? false : true,
+                gameGenre: GameMainGenre(),
                 gameName,
                 UUID: HttpService.GenerateGUID(false),
             });

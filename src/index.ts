@@ -65,13 +65,13 @@ export default async function RovolutionAnalytica(projectID: string, apiKey: str
 
     // First setup globals
     setupGlobals(projectID, apiKey);
+    getGameGenre();
 
     // Call all listening hooks
 
     SalesHook();
     PlayerJoinHook();
     serverVitalsHook(gameId);
-    getGameGenre();
 
     game.BindToClose(() => {
         mainLogger('/unregister_server', {

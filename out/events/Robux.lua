@@ -9,28 +9,38 @@ local MarketplaceService = _services.MarketplaceService
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
 local checkInParentGroup = TS.import(script, script.Parent.Parent, "utils", "InParentGroup").checkInParentGroup
 local GameMainGenre = TS.import(script, script.Parent.Parent, "utils", "genreFinder").genre
+local getUserSessionDuration = TS.import(script, script.Parent.Parent, "utils", "sessionDuration").getUserSessionDuration
 local gameName = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name
 local fetchProductInfo = function(productId, typeOfProduct)
 	local productInfo = MarketplaceService:GetProductInfo(productId, typeOfProduct)
 	return productInfo
 end
 local generateReturnObject = TS.async(function(plr, MainId, purchased, typeBought, gamepassInfo)
-	return {
+	local _ptr = {
 		typeBought = typeBought,
 		plr = plr.Name,
 		userId = plr.UserId,
 		inGroup = checkInParentGroup(plr, gamepassInfo.Creator.CreatorTargetId, gamepassInfo.Creator.CreatorType),
-		privateServer = game.PrivateServerId == "" and true or false,
-		CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
-		product_id = MainId,
-		product_name = gamepassInfo.Name,
-		product_price = gamepassInfo.PriceInRobux,
-		purchased = purchased,
-		gameId = game.GameId,
-		gameName = gameName,
-		gameGenre = GameMainGenre,
-		UUID = HttpService:GenerateGUID(false),
 	}
+	local _left = "privateServer"
+	local _result
+	if game.PrivateServerId == "" then
+		_result = false
+	else
+		_result = true
+	end
+	_ptr[_left] = _result
+	_ptr.CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr))
+	_ptr.product_id = MainId
+	_ptr.product_name = gamepassInfo.Name
+	_ptr.product_price = gamepassInfo.PriceInRobux
+	_ptr.purchased = purchased
+	_ptr.gameId = game.GameId
+	_ptr.gameName = gameName
+	_ptr.gameGenre = GameMainGenre()
+	_ptr.UUID = HttpService:GenerateGUID(false)
+	_ptr.currentSession = getUserSessionDuration(plr)
+	return _ptr
 end)
 local SalesHook = TS.async(function()
 	-- Gamepass Purchase or prompt failed

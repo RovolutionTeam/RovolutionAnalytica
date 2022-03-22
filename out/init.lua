@@ -67,11 +67,11 @@ local RovolutionAnalytica = TS.async(function(projectID, apiKey)
 	RL_LOG("RovolutionAnalytica is starting up.")
 	-- First setup globals
 	setupGlobals(projectID, apiKey)
+	getGameGenre()
 	-- Call all listening hooks
 	SalesHook()
 	PlayerJoinHook()
 	serverVitalsHook(gameId)
-	getGameGenre()
 	game:BindToClose(function()
 		mainLogger("/unregister_server", {
 			gameId = gameId,

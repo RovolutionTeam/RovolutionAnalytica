@@ -6,7 +6,7 @@ import { fetchGlobals } from 'globals';
 let url = 'https://games.roblox.com/v1/games?universeIds=';
 
 export interface DataReturned {
-    data: Datum[];
+    data: Datum;
 }
 
 export interface Datum {
@@ -32,6 +32,8 @@ export interface Datum {
     isAllGenre: boolean;
     isFavoritedByUser: boolean;
     favoritedCount: number;
+    upVotes: number;
+    downVotes: number;
 }
 
 export interface Creator {
@@ -41,12 +43,36 @@ export interface Creator {
     isRNVAccount: boolean;
 }
 
-let genre: string | undefined = undefined;
-let visits: number | undefined = undefined;
-let favourties: number | undefined = undefined;
-let playing: number | undefined = undefined;
+let genreTemp: string | undefined = undefined;
+let visitsTemp: number | undefined = undefined;
+let favourtiesTemp: number | undefined = undefined;
+let playingTemp: number | undefined = undefined;
+let likesTemp: number | undefined = undefined;
+let dislikesTemp: number | undefined = undefined;
 
-export { genre, visits, favourties, playing };
+export function genre() {
+    return genreTemp;
+}
+
+export function visits() {
+    return visitsTemp;
+}
+
+export function favourties() {
+    return favourtiesTemp;
+}
+
+export function playing() {
+    return playingTemp;
+}
+
+export function likes() {
+    return likesTemp;
+}
+
+export function dislikes() {
+    return dislikesTemp;
+}
 
 export async function getGameGenre() {
     const { ProjectID, API_KEY } = fetchGlobals();
@@ -65,15 +91,15 @@ export async function getGameGenre() {
         return;
     }
 
-    print(data);
-
-    if (data.data.size() === 0) {
+    if (data.data === undefined) {
         RL_LOG('Failed to find game genre!');
         return;
     }
 
-    genre = data.data[0].genre;
-    visits = data.data[0].visits;
-    favourties = data.data[0].favoritedCount;
-    playing = data.data[0].playing;
+    genreTemp = data.data.genre;
+    visitsTemp = data.data.visits;
+    favourtiesTemp = data.data.favoritedCount;
+    playingTemp = data.data.playing;
+    likesTemp = data.data.upVotes;
+    dislikesTemp = data.data.downVotes;
 }
