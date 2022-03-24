@@ -7,6 +7,7 @@ local LocalizationService = _services.LocalizationService
 local MarketplaceService = _services.MarketplaceService
 local Players = _services.Players
 local RL_LOG = TS.import(script, script.Parent.Parent, "utils", "consoleLogging").RL_LOG
+local fetchDeviceType = TS.import(script, script.Parent.Parent, "utils", "deviceType").fetchDeviceType
 local GameMainGenre = TS.import(script, script.Parent.Parent, "utils", "genreFinder").genre
 local checkInParentGroup = TS.import(script, script.Parent.Parent, "utils", "InParentGroup").checkInParentGroup
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
@@ -60,6 +61,7 @@ local PlayerJoinHook = TS.async(function()
 			_ptr[_left] = _result
 			_ptr.gameGenre = GameMainGenre()
 			_ptr.gameName = gameName
+			_ptr.deviceType = fetchDeviceType(plr)
 			_ptr.UUID = HttpService:GenerateGUID(false)
 			mainLogger("/handle_leave", _ptr)
 		else

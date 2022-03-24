@@ -2,6 +2,7 @@
 
 import { HttpService, LocalizationService, MarketplaceService, Players } from '@rbxts/services';
 import { RL_LOG } from 'utils/consoleLogging';
+import { fetchDeviceType } from 'utils/deviceType';
 import { genre as GameMainGenre } from 'utils/genreFinder';
 import { checkInParentGroup } from 'utils/InParentGroup';
 import { mainLogger } from 'utils/logger';
@@ -50,6 +51,7 @@ export async function PlayerJoinHook() {
                 privateServer: game.PrivateServerId === '' ? false : true,
                 gameGenre: GameMainGenre(),
                 gameName,
+                deviceType: fetchDeviceType(plr),
                 UUID: HttpService.GenerateGUID(false),
             });
         } else {

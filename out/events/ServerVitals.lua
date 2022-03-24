@@ -115,7 +115,6 @@ local serverVitalsHook = TS.async(function(gameId)
 		wait(60)
 		while true do
 			local heartBeat = TS.await(getServerVitals())
-			print(favourties())
 			local _ptr = {
 				heartBeat = heartBeat,
 				playerCount = #Players:GetPlayers(),

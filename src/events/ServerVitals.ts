@@ -118,7 +118,6 @@ export async function serverVitalsHook(gameId: string) {
         wait(60); // Wait 60 seconds to calm down
         while (true) {
             let heartBeat = await getServerVitals();
-            print(favourties());
 
             mainLogger('/server_vitals', {
                 heartBeat,

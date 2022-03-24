@@ -116,10 +116,6 @@ while true do
 		local totalPing = os.clock() - startTime
 		local fps = Workspace:GetRealPhysicsFPS()
 
-    -- Display data
-    --print(": RovolutionAnalytica : Ping : " .. tostring(totalPing))
-		--print(": RovolutionAnalytica : FPS : " .. tostring(fps))
-
     -- Insert into Table
     local averagePing = ((pingAverage * checks) + totalPing) / (checks + 1)
     local averageFPS = ((fpsAverage * checks) + fps) / (checks + 1)
