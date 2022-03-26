@@ -82,7 +82,7 @@ local RovolutionAnalytica = TS.async(function(projectID, apiKey)
 		local tps = TS.await(getServerVitals())
 		mainLogger("/register_server", {
 			players = #Players:GetPlayers(),
-			severSpeed = tps,
+			serverSpeed = tps,
 			physicsSpeed = Workspace:GetRealPhysicsFPS(),
 			uptime = os.time() - startTime,
 			gameId = gameId,

@@ -11,6 +11,7 @@ local StarterPlayer = _services.StarterPlayer
 local Stats = _services.Stats
 local Workspace = _services.Workspace
 local RL_LOG = TS.import(script, script.Parent.Parent, "utils", "consoleLogging").RL_LOG
+local incrementFriends = TS.import(script, script.Parent.Parent, "utils", "friends").incrementFriends
 local _genreFinder = TS.import(script, script.Parent.Parent, "utils", "genreFinder")
 local visits = _genreFinder.visits
 local playing = _genreFinder.playing
@@ -56,11 +57,16 @@ local getServerVitals = function()
 end
 local serverVitalsHook = TS.async(function(gameId)
 	-- Ok we will now add a client side script to give us more indepth info
+	-- also create folder for all the remote events
+	local mainFolder = Instance.new("Folder", ReplicatedStorage)
+	mainFolder.Name = "RovolutionAnalytica"
 	-- first create a remote event
-	local remoteEvent = Instance.new("RemoteEvent", ReplicatedStorage)
+	local remoteEvent = Instance.new("RemoteEvent", mainFolder)
 	remoteEvent.Name = "ROVOLUTION_ANAYLTICA_CLIENT_DATA"
-	local DeviceType = Instance.new("RemoteEvent", ReplicatedStorage)
+	local DeviceType = Instance.new("RemoteEvent", mainFolder)
 	DeviceType.Name = "ROVOLUTION_ANAYLTICA_DEVICE_DATA"
+	local UpdateFriendsJoined = Instance.new("RemoteEvent", mainFolder)
+	UpdateFriendsJoined.Name = "ROVOLUTION_ANAYLTICA_FRIEND_DATA"
 	remoteEvent.OnServerEvent:Connect(TS.async(function(plr, data)
 		-- Check in cache
 		if cache[plr.UserId] == nil or cache[plr.UserId] + 5 * 60 < os.time() then
@@ -82,6 +88,9 @@ local serverVitalsHook = TS.async(function(gameId)
 			RL_LOG("Potential user spamming API, " .. plr.Name .. " is in the prefetch cache!")
 			return nil
 		end
+	end))
+	UpdateFriendsJoined.OnServerEvent:Connect(TS.async(function(plr)
+		incrementFriends(plr)
 	end))
 	DeviceType.OnServerEvent:Connect(TS.async(function(plr, data)
 		if type(data) == "string" then
@@ -105,7 +114,7 @@ local serverVitalsHook = TS.async(function(gameId)
 		cache[plr.UserId] = nil
 	end)
 	-- first create a remote event
-	local RemoteFunction = Instance.new("RemoteFunction", ReplicatedStorage)
+	local RemoteFunction = Instance.new("RemoteFunction", mainFolder)
 	RemoteFunction.Name = "ROVOLUTION_ANAYLTICA_PING_TEST"
 	RemoteFunction.OnServerInvoke = TS.async(function()
 		return os.clock()

@@ -86,7 +86,7 @@ local RovolutionAnalytica = TS.async(function(projectID, apiKey)
 		local tps = TS.await(getServerVitals())
 		mainLogger("/register_server", {
 			players = #Players:GetPlayers(),
-			severSpeed = tps,
+			serverSpeed = tps,
 			physicsSpeed = Workspace:GetRealPhysicsFPS(),
 			uptime = os.time() - startTime,
 			gameId = gameId,
@@ -114,22 +114,28 @@ local HttpService = _services.HttpService
 local LocalizationService = _services.LocalizationService
 local MarketplaceService = _services.MarketplaceService
 local Players = _services.Players
-local RL_LOG = TS.import(script, script.Parent.Parent, "utils", "consoleLogging").RL_LOG
 local fetchDeviceType = TS.import(script, script.Parent.Parent, "utils", "deviceType").fetchDeviceType
+local fetchFriendsValue = TS.import(script, script.Parent.Parent, "utils", "friends").fetchFriendsValue
 local GameMainGenre = TS.import(script, script.Parent.Parent, "utils", "genreFinder").genre
 local checkInParentGroup = TS.import(script, script.Parent.Parent, "utils", "InParentGroup").checkInParentGroup
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
+local getUserSessionDuration = TS.import(script, script.Parent.Parent, "utils", "sessionDuration").getUserSessionDuration
 -- This handles players joining and leaving --
 local gameName = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name
 local ownerType = game.CreatorType == Enum.CreatorType.User and "User" or "Group"
 local PlayerJoinHook = TS.async(function()
 	-- Ok we want to track session length
 	local handlePlayerJoin = function(plr)
+		-- Create Data Folder
+		local dataFolder = Instance.new("Folder", plr)
+		dataFolder.Name = "RovolutionAnalytica"
 		-- Create a timestamp element
-		local timestamp = Instance.new("NumberValue")
+		local timestamp = Instance.new("NumberValue", dataFolder)
 		timestamp.Name = "Rovolution_Analytica_Timestamp"
 		timestamp.Value = os.time()
-		timestamp.Parent = plr
+		local friendsJoined = Instance.new("NumberValue", dataFolder)
+		friendsJoined.Name = "Rovolution_Analytica_FriendsJoined"
+		friendsJoined.Value = 0
 	end
 	-- Lets also record all players are in the game when we start up
 	local _exp = Players:GetPlayers()
@@ -145,36 +151,43 @@ local PlayerJoinHook = TS.async(function()
 		handlePlayerJoin(plr)
 	end))
 	Players.PlayerRemoving:Connect(TS.async(function(plr)
-		-- Get the timestamp
-		local timestamp = plr:FindFirstChild("Rovolution_Analytica_Timestamp")
-		-- Verify it is the right type
-		if timestamp and timestamp:IsA("NumberValue") then
-			-- Get the timestamp value
-			local timestampValue = timestamp.Value
-			local _ptr = {
-				plr = plr.Name,
-				userId = plr.UserId,
-				sessionDuration = os.time() - timestampValue,
-				inGroup = checkInParentGroup(plr, game.CreatorId, ownerType),
-				CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
-				gameId = game.GameId,
-			}
-			local _left = "privateServer"
-			local _result
-			if game.PrivateServerId == "" then
-				_result = false
-			else
-				_result = true
-			end
-			_ptr[_left] = _result
-			_ptr.gameGenre = GameMainGenre()
-			_ptr.gameName = gameName
-			_ptr.deviceType = fetchDeviceType(plr)
-			_ptr.UUID = HttpService:GenerateGUID(false)
-			mainLogger("/handle_leave", _ptr)
+		local joinData = plr:GetJoinData()
+		local _ptr = {
+			plr = plr.Name,
+			userId = plr.UserId,
+			sessionDuration = getUserSessionDuration(plr),
+			inGroup = checkInParentGroup(plr, game.CreatorId, ownerType),
+			CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
+			gameId = game.GameId,
+		}
+		local _left = "privateServer"
+		local _result
+		if game.PrivateServerId == "" then
+			_result = false
 		else
-			RL_LOG("Could not find Rovolution_Analytica_Timestamp")
+			_result = true
 		end
+		_ptr[_left] = _result
+		_ptr.gameGenre = GameMainGenre()
+		_ptr.gameName = gameName
+		_ptr.deviceType = fetchDeviceType(plr)
+		_ptr.UUID = HttpService:GenerateGUID(false)
+		_ptr.accountAge = plr.AccountAge
+		_ptr.friendsJoined = fetchFriendsValue(plr)
+		local data = _ptr
+		if joinData ~= nil and joinData.SourceGameId ~= nil then
+			local lookupGame = MarketplaceService:GetProductInfo(joinData.SourceGameId, Enum.InfoType.Asset)
+			local _ptr_1 = {}
+			if type(data) == "table" then
+				for _k, _v in pairs(data) do
+					_ptr_1[_k] = _v
+				end
+			end
+			_ptr_1.joinedGame = lookupGame.AssetId
+			_ptr_1.joinedGameName = lookupGame.Name
+			data = _ptr_1
+		end
+		mainLogger("/handle_leave", data)
 	end))
 end)
 return {
@@ -268,6 +281,7 @@ local StarterPlayer = _services.StarterPlayer
 local Stats = _services.Stats
 local Workspace = _services.Workspace
 local RL_LOG = TS.import(script, script.Parent.Parent, "utils", "consoleLogging").RL_LOG
+local incrementFriends = TS.import(script, script.Parent.Parent, "utils", "friends").incrementFriends
 local _genreFinder = TS.import(script, script.Parent.Parent, "utils", "genreFinder")
 local visits = _genreFinder.visits
 local playing = _genreFinder.playing
@@ -313,11 +327,16 @@ local getServerVitals = function()
 end
 local serverVitalsHook = TS.async(function(gameId)
 	-- Ok we will now add a client side script to give us more indepth info
+	-- also create folder for all the remote events
+	local mainFolder = Instance.new("Folder", ReplicatedStorage)
+	mainFolder.Name = "RovolutionAnalytica"
 	-- first create a remote event
-	local remoteEvent = Instance.new("RemoteEvent", ReplicatedStorage)
+	local remoteEvent = Instance.new("RemoteEvent", mainFolder)
 	remoteEvent.Name = "ROVOLUTION_ANAYLTICA_CLIENT_DATA"
-	local DeviceType = Instance.new("RemoteEvent", ReplicatedStorage)
+	local DeviceType = Instance.new("RemoteEvent", mainFolder)
 	DeviceType.Name = "ROVOLUTION_ANAYLTICA_DEVICE_DATA"
+	local UpdateFriendsJoined = Instance.new("RemoteEvent", mainFolder)
+	UpdateFriendsJoined.Name = "ROVOLUTION_ANAYLTICA_FRIEND_DATA"
 	remoteEvent.OnServerEvent:Connect(TS.async(function(plr, data)
 		-- Check in cache
 		if cache[plr.UserId] == nil or cache[plr.UserId] + 5 * 60 < os.time() then
@@ -339,6 +358,9 @@ local serverVitalsHook = TS.async(function(gameId)
 			RL_LOG("Potential user spamming API, " .. plr.Name .. " is in the prefetch cache!")
 			return nil
 		end
+	end))
+	UpdateFriendsJoined.OnServerEvent:Connect(TS.async(function(plr)
+		incrementFriends(plr)
 	end))
 	DeviceType.OnServerEvent:Connect(TS.async(function(plr, data)
 		if type(data) == "string" then
@@ -362,7 +384,7 @@ local serverVitalsHook = TS.async(function(gameId)
 		cache[plr.UserId] = nil
 	end)
 	-- first create a remote event
-	local RemoteFunction = Instance.new("RemoteFunction", ReplicatedStorage)
+	local RemoteFunction = Instance.new("RemoteFunction", mainFolder)
 	RemoteFunction.Name = "ROVOLUTION_ANAYLTICA_PING_TEST"
 	RemoteFunction.OnServerInvoke = TS.async(function()
 		return os.clock()
@@ -462,15 +484,19 @@ return {
 
 -- Standard globals
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Analytica = ReplicatedStorage:WaitForChild("RovolutionAnalytica")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local Me = Players.LocalPlayer
 
 
 script.Name = "ROVOLUTION_ANAYLTICA_CLIENT_DATA"
-local API = ReplicatedStorage:WaitForChild("ROVOLUTION_ANAYLTICA_CLIENT_DATA")
-local ping = ReplicatedStorage:WaitForChild("ROVOLUTION_ANAYLTICA_PING_TEST")
-local deviceType = ReplicatedStorage:WaitForChild("ROVOLUTION_ANAYLTICA_DEVICE_DATA")
+local API = Analytica:WaitForChild("ROVOLUTION_ANAYLTICA_CLIENT_DATA")
+local ping = Analytica:WaitForChild("ROVOLUTION_ANAYLTICA_PING_TEST")
+local deviceType = Analytica:WaitForChild("ROVOLUTION_ANAYLTICA_DEVICE_DATA")
+local friendData = Analytica:WaitForChild("ROVOLUTION_ANAYLTICA_FRIEND_DATA")
 
 function roundTo2DP(value)
 	value *= 100
@@ -484,6 +510,11 @@ local pingAverage = 0
 local fpsAverage = 0
 local checks = 0
 
+Players.PlayerAdded:Connect(function(player)
+	if Me:IsFriendsWith(player.UserId) then
+		friendData:FireServer()
+	end
+end)
 
 -- Device Type
 function getEnabled()
@@ -519,6 +550,8 @@ if not RunService:IsStudio() then
   warn("This game uses the RovolutionAnalytica service, to provide analytics, by playing this game you are agreeing to the privacy policy accessable at https://logistics.rovolution.me/privacy-policy")
 end
 -- Also no memory leaks thanks to yours truley -- Gerald
+
+
 
 while true do
 	if API and API:IsA("RemoteEvent") and ping and ping:IsA("RemoteFunction") then
@@ -662,7 +695,11 @@ return {
           <string name="Name">deviceType</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
 local function fetchDeviceType(plr)
-	local deviceType = plr:FindFirstChild("ROVOLUTION_DEVICE_TYPE")
+	local _deviceType = plr:FindFirstChild("ROVOLUTION_ANALYTICA")
+	if _deviceType ~= nil then
+		_deviceType = _deviceType:FindFirstChild("ROVOLUTION_DEVICE_TYPE")
+	end
+	local deviceType = _deviceType
 	-- Verify it is the right type
 	if not (deviceType and deviceType:IsA("StringValue")) then
 		return "N/A"
@@ -676,6 +713,44 @@ return {
         </Properties>
       </Item>
       <Item class="ModuleScript" referent="12">
+        <Properties>
+          <string name="Name">friends</string>
+          <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
+local function fetchFriends(plr)
+	local _deviceType = plr:FindFirstChild("RovolutionAnalytica")
+	if _deviceType ~= nil then
+		_deviceType = _deviceType:FindFirstChild("Rovolution_Analytica_FriendsJoined")
+	end
+	local deviceType = _deviceType
+	-- Verify it is the right type
+	if not (deviceType and deviceType:IsA("NumberValue")) then
+		return "N/A"
+	end
+	return deviceType
+end
+local function incrementFriends(plr)
+	local dataObj = fetchFriends(plr)
+	if dataObj == "N/A" then
+		return nil
+	end
+	dataObj.Value = dataObj.Value + 1
+end
+local function fetchFriendsValue(plr)
+	local dataObj = fetchFriends(plr)
+	if dataObj == "N/A" then
+		return 0
+	end
+	return dataObj.Value
+end
+return {
+	fetchFriends = fetchFriends,
+	incrementFriends = incrementFriends,
+	fetchFriendsValue = fetchFriendsValue,
+}
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="13">
         <Properties>
           <string name="Name">genreFinder</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
@@ -752,7 +827,7 @@ return {
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="13">
+      <Item class="ModuleScript" referent="14">
         <Properties>
           <string name="Name">logger</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
@@ -830,12 +905,16 @@ return {
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="14">
+      <Item class="ModuleScript" referent="15">
         <Properties>
           <string name="Name">sessionDuration</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
 local function getUserSessionDuration(plr)
-	local timestamp = plr:FindFirstChild("Rovolution_Analytica_Timestamp")
+	local _timestamp = plr:FindFirstChild("ROVOLUTION_ANALYTICA")
+	if _timestamp ~= nil then
+		_timestamp = _timestamp:FindFirstChild("Rovolution_Analytica_Timestamp")
+	end
+	local timestamp = _timestamp
 	if not (timestamp and timestamp:IsA("NumberValue")) then
 		return 0
 	end
@@ -848,11 +927,11 @@ return {
         </Properties>
       </Item>
     </Item>
-    <Item class="Folder" referent="15">
+    <Item class="Folder" referent="16">
       <Properties>
         <string name="Name">include</string>
       </Properties>
-      <Item class="ModuleScript" referent="16">
+      <Item class="ModuleScript" referent="17">
         <Properties>
           <string name="Name">Promise</string>
           <string name="Source"><![CDATA[--[[
@@ -2260,7 +2339,7 @@ return Promise
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="17">
+      <Item class="ModuleScript" referent="18">
         <Properties>
           <string name="Name">RuntimeLib</string>
           <string name="Source"><![CDATA[local Promise = require(script.Parent.Promise)
@@ -2495,21 +2574,21 @@ return TS
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="18">
+      <Item class="Folder" referent="19">
         <Properties>
           <string name="Name">node_modules</string>
         </Properties>
-        <Item class="Folder" referent="19">
+        <Item class="Folder" referent="20">
           <Properties>
             <string name="Name">compiler-types</string>
           </Properties>
-          <Item class="Folder" referent="20">
+          <Item class="Folder" referent="21">
             <Properties>
               <string name="Name">types</string>
             </Properties>
           </Item>
         </Item>
-        <Item class="ModuleScript" referent="21">
+        <Item class="ModuleScript" referent="22">
           <Properties>
             <string name="Name">services</string>
             <string name="Source"><![CDATA[return setmetatable({}, {
@@ -2522,15 +2601,15 @@ return TS
 ]]></string>
           </Properties>
         </Item>
-        <Item class="Folder" referent="22">
+        <Item class="Folder" referent="23">
           <Properties>
             <string name="Name">types</string>
           </Properties>
-          <Item class="Folder" referent="23">
+          <Item class="Folder" referent="24">
             <Properties>
               <string name="Name">include</string>
             </Properties>
-            <Item class="Folder" referent="24">
+            <Item class="Folder" referent="25">
               <Properties>
                 <string name="Name">generated</string>
               </Properties>

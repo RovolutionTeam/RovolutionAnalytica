@@ -6,22 +6,28 @@ local HttpService = _services.HttpService
 local LocalizationService = _services.LocalizationService
 local MarketplaceService = _services.MarketplaceService
 local Players = _services.Players
-local RL_LOG = TS.import(script, script.Parent.Parent, "utils", "consoleLogging").RL_LOG
 local fetchDeviceType = TS.import(script, script.Parent.Parent, "utils", "deviceType").fetchDeviceType
+local fetchFriendsValue = TS.import(script, script.Parent.Parent, "utils", "friends").fetchFriendsValue
 local GameMainGenre = TS.import(script, script.Parent.Parent, "utils", "genreFinder").genre
 local checkInParentGroup = TS.import(script, script.Parent.Parent, "utils", "InParentGroup").checkInParentGroup
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
+local getUserSessionDuration = TS.import(script, script.Parent.Parent, "utils", "sessionDuration").getUserSessionDuration
 -- This handles players joining and leaving --
 local gameName = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name
 local ownerType = game.CreatorType == Enum.CreatorType.User and "User" or "Group"
 local PlayerJoinHook = TS.async(function()
 	-- Ok we want to track session length
 	local handlePlayerJoin = function(plr)
+		-- Create Data Folder
+		local dataFolder = Instance.new("Folder", plr)
+		dataFolder.Name = "RovolutionAnalytica"
 		-- Create a timestamp element
-		local timestamp = Instance.new("NumberValue")
+		local timestamp = Instance.new("NumberValue", dataFolder)
 		timestamp.Name = "Rovolution_Analytica_Timestamp"
 		timestamp.Value = os.time()
-		timestamp.Parent = plr
+		local friendsJoined = Instance.new("NumberValue", dataFolder)
+		friendsJoined.Name = "Rovolution_Analytica_FriendsJoined"
+		friendsJoined.Value = 0
 	end
 	-- Lets also record all players are in the game when we start up
 	local _exp = Players:GetPlayers()
@@ -37,36 +43,43 @@ local PlayerJoinHook = TS.async(function()
 		handlePlayerJoin(plr)
 	end))
 	Players.PlayerRemoving:Connect(TS.async(function(plr)
-		-- Get the timestamp
-		local timestamp = plr:FindFirstChild("Rovolution_Analytica_Timestamp")
-		-- Verify it is the right type
-		if timestamp and timestamp:IsA("NumberValue") then
-			-- Get the timestamp value
-			local timestampValue = timestamp.Value
-			local _ptr = {
-				plr = plr.Name,
-				userId = plr.UserId,
-				sessionDuration = os.time() - timestampValue,
-				inGroup = checkInParentGroup(plr, game.CreatorId, ownerType),
-				CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
-				gameId = game.GameId,
-			}
-			local _left = "privateServer"
-			local _result
-			if game.PrivateServerId == "" then
-				_result = false
-			else
-				_result = true
-			end
-			_ptr[_left] = _result
-			_ptr.gameGenre = GameMainGenre()
-			_ptr.gameName = gameName
-			_ptr.deviceType = fetchDeviceType(plr)
-			_ptr.UUID = HttpService:GenerateGUID(false)
-			mainLogger("/handle_leave", _ptr)
+		local joinData = plr:GetJoinData()
+		local _ptr = {
+			plr = plr.Name,
+			userId = plr.UserId,
+			sessionDuration = getUserSessionDuration(plr),
+			inGroup = checkInParentGroup(plr, game.CreatorId, ownerType),
+			CountryCode = TS.await(LocalizationService:GetCountryRegionForPlayerAsync(plr)),
+			gameId = game.GameId,
+		}
+		local _left = "privateServer"
+		local _result
+		if game.PrivateServerId == "" then
+			_result = false
 		else
-			RL_LOG("Could not find Rovolution_Analytica_Timestamp")
+			_result = true
 		end
+		_ptr[_left] = _result
+		_ptr.gameGenre = GameMainGenre()
+		_ptr.gameName = gameName
+		_ptr.deviceType = fetchDeviceType(plr)
+		_ptr.UUID = HttpService:GenerateGUID(false)
+		_ptr.accountAge = plr.AccountAge
+		_ptr.friendsJoined = fetchFriendsValue(plr)
+		local data = _ptr
+		if joinData ~= nil and joinData.SourceGameId ~= nil then
+			local lookupGame = MarketplaceService:GetProductInfo(joinData.SourceGameId, Enum.InfoType.Asset)
+			local _ptr_1 = {}
+			if type(data) == "table" then
+				for _k, _v in pairs(data) do
+					_ptr_1[_k] = _v
+				end
+			end
+			_ptr_1.joinedGame = lookupGame.AssetId
+			_ptr_1.joinedGameName = lookupGame.Name
+			data = _ptr_1
+		end
+		mainLogger("/handle_leave", data)
 	end))
 end)
 return {

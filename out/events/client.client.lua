@@ -50,15 +50,19 @@
 
 -- Standard globals
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Analytica = ReplicatedStorage:WaitForChild("RovolutionAnalytica")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local Me = Players.LocalPlayer
 
 
 script.Name = "ROVOLUTION_ANAYLTICA_CLIENT_DATA"
-local API = ReplicatedStorage:WaitForChild("ROVOLUTION_ANAYLTICA_CLIENT_DATA")
-local ping = ReplicatedStorage:WaitForChild("ROVOLUTION_ANAYLTICA_PING_TEST")
-local deviceType = ReplicatedStorage:WaitForChild("ROVOLUTION_ANAYLTICA_DEVICE_DATA")
+local API = Analytica:WaitForChild("ROVOLUTION_ANAYLTICA_CLIENT_DATA")
+local ping = Analytica:WaitForChild("ROVOLUTION_ANAYLTICA_PING_TEST")
+local deviceType = Analytica:WaitForChild("ROVOLUTION_ANAYLTICA_DEVICE_DATA")
+local friendData = Analytica:WaitForChild("ROVOLUTION_ANAYLTICA_FRIEND_DATA")
 
 function roundTo2DP(value)
 	value *= 100
@@ -72,6 +76,11 @@ local pingAverage = 0
 local fpsAverage = 0
 local checks = 0
 
+Players.PlayerAdded:Connect(function(player)
+	if Me:IsFriendsWith(player.UserId) then
+		friendData:FireServer()
+	end
+end)
 
 -- Device Type
 function getEnabled()
@@ -107,6 +116,8 @@ if not RunService:IsStudio() then
   warn("This game uses the RovolutionAnalytica service, to provide analytics, by playing this game you are agreeing to the privacy policy accessable at https://logistics.rovolution.me/privacy-policy")
 end
 -- Also no memory leaks thanks to yours truley -- Gerald
+
+
 
 while true do
 	if API and API:IsA("RemoteEvent") and ping and ping:IsA("RemoteFunction") then

@@ -84,7 +84,7 @@ export default async function RovolutionAnalytica(projectID: string, apiKey: str
         let tps = await getServerVitals();
         mainLogger('/register_server', {
             players: Players.GetPlayers().size(),
-            severSpeed: tps,
+            serverSpeed: tps,
             physicsSpeed: Workspace.GetRealPhysicsFPS(),
             uptime: os.time() - startTime,
             gameId,

@@ -2,6 +2,7 @@
 
 import { HttpService, LocalizationService, Players, ReplicatedStorage, RunService, StarterPlayer, Stats, Workspace } from '@rbxts/services';
 import { RL_LOG } from 'utils/consoleLogging';
+import { incrementFriends } from 'utils/friends';
 import { visits, playing, favourties, genre, likes, dislikes } from 'utils/genreFinder';
 import { mainLogger } from 'utils/logger';
 
@@ -49,12 +50,19 @@ export const getServerVitals = () => {
 export async function serverVitalsHook(gameId: string) {
     // Ok we will now add a client side script to give us more indepth info
 
+    // also create folder for all the remote events
+    let mainFolder = new Instance('Folder', ReplicatedStorage);
+    mainFolder.Name = 'RovolutionAnalytica';
+
     // first create a remote event
-    let remoteEvent = new Instance('RemoteEvent', ReplicatedStorage);
+    let remoteEvent = new Instance('RemoteEvent', mainFolder);
     remoteEvent.Name = 'ROVOLUTION_ANAYLTICA_CLIENT_DATA';
 
-    let DeviceType = new Instance('RemoteEvent', ReplicatedStorage);
+    let DeviceType = new Instance('RemoteEvent', mainFolder);
     DeviceType.Name = 'ROVOLUTION_ANAYLTICA_DEVICE_DATA';
+
+    let UpdateFriendsJoined = new Instance('RemoteEvent', mainFolder);
+    UpdateFriendsJoined.Name = 'ROVOLUTION_ANAYLTICA_FRIEND_DATA';
 
     remoteEvent.OnServerEvent.Connect(async (plr: Player, data: any) => {
         // Check in cache
@@ -84,6 +92,10 @@ export async function serverVitalsHook(gameId: string) {
         }
     });
 
+    UpdateFriendsJoined.OnServerEvent.Connect(async (plr: Player) => {
+        incrementFriends(plr);
+    });
+
     DeviceType.OnServerEvent.Connect(async (plr: Player, data: any) => {
         if (typeIs(data, 'string')) {
             visitObject[data] = visitObject[data] + 1;
@@ -106,7 +118,7 @@ export async function serverVitalsHook(gameId: string) {
     });
 
     // first create a remote event
-    let RemoteFunction = new Instance('RemoteFunction', ReplicatedStorage);
+    let RemoteFunction = new Instance('RemoteFunction', mainFolder);
     RemoteFunction.Name = 'ROVOLUTION_ANAYLTICA_PING_TEST';
 
     RemoteFunction.OnServerInvoke = async () => {
