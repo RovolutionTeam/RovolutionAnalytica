@@ -56,6 +56,7 @@ import { getServerVitals, serverVitalsHook } from 'events/ServerVitals';
 import { mainLogger } from 'utils/logger';
 import { HttpService, Players, Workspace } from '@rbxts/services';
 import { getGameGenre } from 'utils/genreFinder';
+import { cleanUpServer, StartUptime } from 'events/serverSession';
 
 const startTime = os.time();
 const gameId = HttpService.GenerateGUID(false);
@@ -73,7 +74,12 @@ export default async function RovolutionAnalytica(projectID: string, apiKey: str
     PlayerJoinHook();
     serverVitalsHook(gameId);
 
+    // Server session handler
+    StartUptime();
+
     game.BindToClose(() => {
+        cleanUpServer();
+
         mainLogger('/unregister_server', {
             gameId,
         });

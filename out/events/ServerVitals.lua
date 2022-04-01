@@ -96,7 +96,7 @@ local serverVitalsHook = TS.async(function(gameId)
 		if type(data) == "string" then
 			visitObject[data] = visitObject[data] + 1
 			-- Now add that to the player
-			local deviceType = Instance.new("StringValue", plr)
+			local deviceType = Instance.new("StringValue", plr:FindFirstChild("RovolutionAnalytica"))
 			deviceType.Name = "ROVOLUTION_DEVICE_TYPE"
 			deviceType.Value = data
 		end

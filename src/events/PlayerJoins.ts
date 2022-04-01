@@ -6,6 +6,7 @@ import { fetchFriendsValue } from 'utils/friends';
 import { genre as GameMainGenre } from 'utils/genreFinder';
 import { checkInParentGroup } from 'utils/InParentGroup';
 import { mainLogger } from 'utils/logger';
+import { addPlayer, checkPlayerJoinedBefore, cleanUpPlayerJoined } from 'utils/NewVsReturning';
 import { getUserSessionDuration } from 'utils/sessionDuration';
 
 // This handles players joining and leaving --
@@ -29,6 +30,9 @@ export async function PlayerJoinHook() {
         let friendsJoined = new Instance('NumberValue', dataFolder);
         friendsJoined.Name = 'Rovolution_Analytica_FriendsJoined';
         friendsJoined.Value = 0;
+
+        // Check if first time in game
+        addPlayer(plr);
     };
 
     // Lets also record all players are in the game when we start up
@@ -58,17 +62,27 @@ export async function PlayerJoinHook() {
             UUID: HttpService.GenerateGUID(false),
             accountAge: plr.AccountAge, // This is not to do with real irl age
             friendsJoined: fetchFriendsValue(plr),
+            firstTime: checkPlayerJoinedBefore(plr),
+            premiumPlayer: plr.MembershipType === Enum.MembershipType.Premium,
         };
 
-        if (joinData !== undefined && joinData.SourceGameId !== undefined) {
-            let lookupGame = MarketplaceService.GetProductInfo(joinData.SourceGameId, Enum.InfoType.Asset);
+        if (joinData !== undefined && joinData.SourcePlaceId !== undefined) {
+            let lookupGame = MarketplaceService.GetProductInfo(joinData.SourcePlaceId, Enum.InfoType.Asset);
             data = {
                 ...data,
+                teleported: true,
                 joinedGame: lookupGame.AssetId,
                 joinedGameName: lookupGame.Name,
+            };
+        } else {
+            data = {
+                ...data,
+                teleported: false,
             };
         }
 
         mainLogger('/handle_leave', data);
+
+        cleanUpPlayerJoined(plr);
     });
 }

@@ -10,6 +10,7 @@ local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").ma
 local checkInParentGroup = TS.import(script, script.Parent.Parent, "utils", "InParentGroup").checkInParentGroup
 local GameMainGenre = TS.import(script, script.Parent.Parent, "utils", "genreFinder").genre
 local getUserSessionDuration = TS.import(script, script.Parent.Parent, "utils", "sessionDuration").getUserSessionDuration
+local checkPlayerJoinedBefore = TS.import(script, script.Parent.Parent, "utils", "NewVsReturning").checkPlayerJoinedBefore
 local gameName = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name
 local fetchProductInfo = function(productId, typeOfProduct)
 	local productInfo = MarketplaceService:GetProductInfo(productId, typeOfProduct)
@@ -39,7 +40,9 @@ local generateReturnObject = TS.async(function(plr, MainId, purchased, typeBough
 	_ptr.gameName = gameName
 	_ptr.gameGenre = GameMainGenre()
 	_ptr.UUID = HttpService:GenerateGUID(false)
+	_ptr.firstTime = checkPlayerJoinedBefore(plr)
 	_ptr.currentSession = getUserSessionDuration(plr)
+	_ptr.premiumPlayer = plr.MembershipType == Enum.MembershipType.Premium
 	return _ptr
 end)
 local SalesHook = TS.async(function()

@@ -101,7 +101,7 @@ export async function serverVitalsHook(gameId: string) {
             visitObject[data] = visitObject[data] + 1;
 
             // Now add that to the player
-            let deviceType = new Instance('StringValue', plr);
+            let deviceType = new Instance('StringValue', plr.FindFirstChild('RovolutionAnalytica'));
             deviceType.Name = 'ROVOLUTION_DEVICE_TYPE';
             deviceType.Value = data;
         }

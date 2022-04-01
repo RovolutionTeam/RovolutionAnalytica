@@ -1,6 +1,6 @@
 -- Compiled with roblox-ts v1.2.3
 local function fetchDeviceType(plr)
-	local _deviceType = plr:FindFirstChild("ROVOLUTION_ANALYTICA")
+	local _deviceType = plr:FindFirstChild("RovolutionAnalytica")
 	if _deviceType ~= nil then
 		_deviceType = _deviceType:FindFirstChild("ROVOLUTION_DEVICE_TYPE")
 	end

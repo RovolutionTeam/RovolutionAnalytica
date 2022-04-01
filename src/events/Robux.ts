@@ -7,6 +7,7 @@ import { mainLogger } from 'utils/logger';
 import { checkInParentGroup } from 'utils/InParentGroup';
 import { genre as GameMainGenre } from 'utils/genreFinder';
 import { getUserSessionDuration } from 'utils/sessionDuration';
+import { checkPlayerJoinedBefore } from 'utils/NewVsReturning';
 
 let gameName = MarketplaceService.GetProductInfo(game.PlaceId, Enum.InfoType.Asset).Name;
 
@@ -38,7 +39,9 @@ let generateReturnObject = async (
         gameName,
         gameGenre: GameMainGenre(),
         UUID: HttpService.GenerateGUID(false),
+        firstTime: checkPlayerJoinedBefore(plr),
         currentSession: getUserSessionDuration(plr),
+        premiumPlayer: plr.MembershipType === Enum.MembershipType.Premium,
     };
 };
 

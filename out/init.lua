@@ -61,6 +61,9 @@ local HttpService = _services.HttpService
 local Players = _services.Players
 local Workspace = _services.Workspace
 local getGameGenre = TS.import(script, script, "utils", "genreFinder").getGameGenre
+local _serverSession = TS.import(script, script, "events", "serverSession")
+local cleanUpServer = _serverSession.cleanUpServer
+local StartUptime = _serverSession.StartUptime
 local startTime = os.time()
 local gameId = HttpService:GenerateGUID(false)
 local RovolutionAnalytica = TS.async(function(projectID, apiKey)
@@ -72,7 +75,10 @@ local RovolutionAnalytica = TS.async(function(projectID, apiKey)
 	SalesHook()
 	PlayerJoinHook()
 	serverVitalsHook(gameId)
+	-- Server session handler
+	StartUptime()
 	game:BindToClose(function()
+		cleanUpServer()
 		mainLogger("/unregister_server", {
 			gameId = gameId,
 		})

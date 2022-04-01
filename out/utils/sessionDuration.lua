@@ -1,6 +1,6 @@
 -- Compiled with roblox-ts v1.2.3
 local function getUserSessionDuration(plr)
-	local _timestamp = plr:FindFirstChild("ROVOLUTION_ANALYTICA")
+	local _timestamp = plr:FindFirstChild("RovolutionAnalytica")
 	if _timestamp ~= nil then
 		_timestamp = _timestamp:FindFirstChild("Rovolution_Analytica_Timestamp")
 	end
