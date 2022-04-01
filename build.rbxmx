@@ -701,7 +701,9 @@ return {
           <string name="Name">serverSession</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
 local TS = require(script.Parent.Parent.include.RuntimeLib)
-local Players = TS.import(script, TS.getModule(script, "@rbxts", "services")).Players
+local _services = TS.import(script, TS.getModule(script, "@rbxts", "services"))
+local Players = _services.Players
+local Workspace = _services.Workspace
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
 local getServerVitals = TS.import(script, script.Parent, "ServerVitals").getServerVitals
 local plrJoinedArray = {}
@@ -721,6 +723,7 @@ local function cleanUpServer()
 	end
 	_ptr[_left] = _result
 	_ptr.uptime = uptime
+	_ptr.physicsSpeed = Workspace:GetRealPhysicsFPS()
 	local _left_1 = "avgPlayers"
 	local _plrJoinedArray = plrJoinedArray
 	local _arg0 = function(a, b)
