@@ -4,6 +4,7 @@ local Players = TS.import(script, TS.getModule(script, "@rbxts", "services")).Pl
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
 local getServerVitals = TS.import(script, script.Parent, "ServerVitals").getServerVitals
 local plrJoinedArray = {}
+local premiumJoinedArray = {}
 local heartbeat = {}
 local startTime = os.time()
 local function cleanUpServer()
@@ -32,20 +33,61 @@ local function cleanUpServer()
 	end
 	-- ▲ ReadonlyArray.reduce ▲
 	_ptr[_left_1] = _result_1 / #plrJoinedArray
-	local _left_2 = "avgHeartbeat"
-	local _heartbeat = heartbeat
+	local _left_2 = "avgPremiumPlayers"
+	local _premiumJoinedArray = premiumJoinedArray
 	local _arg0_1 = function(a, b)
 		return a + b
 	end
 	-- ▼ ReadonlyArray.reduce ▼
 	local _result_2 = 0
 	local _callback_1 = _arg0_1
-	for _i = 1, #_heartbeat do
-		_result_2 = _callback_1(_result_2, _heartbeat[_i], _i - 1, _heartbeat)
+	for _i = 1, #_premiumJoinedArray do
+		_result_2 = _callback_1(_result_2, _premiumJoinedArray[_i], _i - 1, _premiumJoinedArray)
 	end
 	-- ▲ ReadonlyArray.reduce ▲
-	_ptr[_left_2] = _result_2 / #heartbeat
+	_ptr[_left_2] = _result_2 / #premiumJoinedArray
+	local _left_3 = "avgHeartbeat"
+	local _heartbeat = heartbeat
+	local _arg0_2 = function(a, b)
+		return a + b
+	end
+	-- ▼ ReadonlyArray.reduce ▼
+	local _result_3 = 0
+	local _callback_2 = _arg0_2
+	for _i = 1, #_heartbeat do
+		_result_3 = _callback_2(_result_3, _heartbeat[_i], _i - 1, _heartbeat)
+	end
+	-- ▲ ReadonlyArray.reduce ▲
+	_ptr[_left_3] = _result_3 / #heartbeat
 	mainLogger("/server_session", _ptr)
+end
+local function getAveragePlayers()
+	local _plrJoinedArray = plrJoinedArray
+	local _arg0 = function(a, b)
+		return a + b
+	end
+	-- ▼ ReadonlyArray.reduce ▼
+	local _result = 0
+	local _callback = _arg0
+	for _i = 1, #_plrJoinedArray do
+		_result = _callback(_result, _plrJoinedArray[_i], _i - 1, _plrJoinedArray)
+	end
+	-- ▲ ReadonlyArray.reduce ▲
+	return _result / #plrJoinedArray
+end
+local function getAverageHeartbeat()
+	local _heartbeat = heartbeat
+	local _arg0 = function(a, b)
+		return a + b
+	end
+	-- ▼ ReadonlyArray.reduce ▼
+	local _result = 0
+	local _callback = _arg0
+	for _i = 1, #_heartbeat do
+		_result = _callback(_result, _heartbeat[_i], _i - 1, _heartbeat)
+	end
+	-- ▲ ReadonlyArray.reduce ▲
+	return _result / #heartbeat
 end
 local function StartUptime()
 	-- Look away please :EYES:
@@ -56,18 +98,39 @@ local function StartUptime()
 			-- ▼ Array.push ▼
 			_plrJoinedArray[#_plrJoinedArray + 1] = _arg0
 			-- ▲ Array.push ▲
+			local _premiumJoinedArray = premiumJoinedArray
+			local _exp = Players:GetPlayers()
+			local _arg0_1 = function(p)
+				return p.MembershipType == Enum.MembershipType.Premium
+			end
+			-- ▼ ReadonlyArray.filter ▼
+			local _newValue = {}
+			local _length = 0
+			for _k, _v in ipairs(_exp) do
+				if _arg0_1(_v, _k - 1, _exp) == true then
+					_length += 1
+					_newValue[_length] = _v
+				end
+			end
+			-- ▲ ReadonlyArray.filter ▲
+			-- ▼ Array.push ▼
+			local _arg0_2 = #_newValue
+			_premiumJoinedArray[#_premiumJoinedArray + 1] = _arg0_2
+			-- ▲ Array.push ▲
 			-- cheeky as number, but it always will be
 			local _heartbeat = heartbeat
-			local _arg0_1 = (TS.await(getServerVitals()))
+			local _arg0_3 = (TS.await(getServerVitals()))
 			-- ▼ Array.push ▼
-			_heartbeat[#_heartbeat + 1] = _arg0_1
+			_heartbeat[#_heartbeat + 1] = _arg0_3
 			-- ▲ Array.push ▲
-			-- 20 sec cause Rovolution is #LightWeight #BlazinglyFast #CuttingEdge
-			wait(20)
+			-- 120 sec cause Rovolution is #LightWeight #BlazinglyFast #CuttingEdge
+			wait(120)
 		end
 	end)()
 end
 return {
 	cleanUpServer = cleanUpServer,
+	getAveragePlayers = getAveragePlayers,
+	getAverageHeartbeat = getAverageHeartbeat,
 	StartUptime = StartUptime,
 }

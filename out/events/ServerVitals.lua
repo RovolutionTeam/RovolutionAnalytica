@@ -147,6 +147,14 @@ local serverVitalsHook = TS.async(function(gameId)
 			_ptr.gameId = gameId
 			_ptr.likes = likes()
 			_ptr.dislikes = dislikes()
+			local _left = "privateServer"
+			local _result
+			if game.PrivateServerId == "" then
+				_result = false
+			else
+				_result = true
+			end
+			_ptr[_left] = _result
 			mainLogger("/server_vitals", _ptr)
 			wait(60 * 5)
 		end

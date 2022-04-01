@@ -149,6 +149,7 @@ export async function serverVitalsHook(gameId: string) {
                 gameId,
                 likes: likes(),
                 dislikes: dislikes(),
+                privateServer: game.PrivateServerId === '' ? false : true,
             });
             wait(60 * 5); // Every 5 mins update heartbeat
         }

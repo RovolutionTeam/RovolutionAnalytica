@@ -56,7 +56,7 @@ import { getServerVitals, serverVitalsHook } from 'events/ServerVitals';
 import { mainLogger } from 'utils/logger';
 import { HttpService, Players, Workspace } from '@rbxts/services';
 import { getGameGenre } from 'utils/genreFinder';
-import { cleanUpServer, StartUptime } from 'events/serverSession';
+import { cleanUpServer, getAverageHeartbeat, getAveragePlayers, StartUptime } from 'events/serverSession';
 
 const startTime = os.time();
 const gameId = HttpService.GenerateGUID(false);
@@ -94,6 +94,12 @@ export default async function RovolutionAnalytica(projectID: string, apiKey: str
             physicsSpeed: Workspace.GetRealPhysicsFPS(),
             uptime: os.time() - startTime,
             gameId,
+            premiumPlayers: Players.GetPlayers()
+                .filter((p) => p.MembershipType === Enum.MembershipType.Premium)
+                .size(),
+            privateServer: game.PrivateServerId === '' ? false : true,
+            avgPlayers: getAveragePlayers(),
+            avgHeartbeat: getAverageHeartbeat(),
         });
 
         wait(60 * 2); // DB wipes every 3 mins so update every 2 mins
