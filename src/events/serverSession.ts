@@ -1,4 +1,4 @@
-import { Players, ReplicatedStorage } from '@rbxts/services';
+import { Players, ReplicatedStorage, Workspace } from '@rbxts/services';
 import { mainLogger } from 'utils/logger';
 import { getServerVitals } from './ServerVitals';
 
@@ -14,6 +14,7 @@ export function cleanUpServer() {
     mainLogger('/server_session', {
         privateServer: game.PrivateServerId === '' ? false : true,
         uptime,
+        physicsSpeed: Workspace.GetRealPhysicsFPS(),
 
         // :vomits: reduce, i guess it works :shrug:
         avgPlayers: plrJoinedArray.reduce((a, b) => a + b, 0) / plrJoinedArray.size(),
