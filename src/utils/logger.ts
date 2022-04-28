@@ -49,7 +49,7 @@ export function mainLogger(typeOfReq: string, message: { [key: string]: string |
         HttpService.PostAsync(root_api + typeOfReq, json_Serialised);
     } catch (e) {
         // If it fails, log it
-        RL_LOG(`Failed to send data to API ${e}`);
+        RL_LOG(`Failed to send data to API ${e}, debug url ${typeOfReq}!`);
     }
 }
 

@@ -63,7 +63,7 @@ local function mainLogger(typeOfReq, message)
 		HttpService:PostAsync(root_api .. typeOfReq, json_Serialised)
 	end, function(e)
 		-- If it fails, log it
-		RL_LOG("Failed to send data to API " .. tostring(e))
+		RL_LOG("Failed to send data to API " .. tostring(e) .. ", debug url " .. typeOfReq .. "!")
 	end)
 end
 return {

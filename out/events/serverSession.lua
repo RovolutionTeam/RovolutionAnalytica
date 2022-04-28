@@ -65,6 +65,7 @@ local function cleanUpServer()
 	mainLogger("/server_session", _ptr)
 end
 local function getAveragePlayers()
+	-- :VOMIT: Reduce, its like art respect the Process
 	local _plrJoinedArray = plrJoinedArray
 	local _arg0 = function(a, b)
 		return a + b
@@ -79,6 +80,7 @@ local function getAveragePlayers()
 	return _result / #plrJoinedArray
 end
 local function getAverageHeartbeat()
+	-- Same here EWWWWW
 	local _heartbeat = heartbeat
 	local _arg0 = function(a, b)
 		return a + b
@@ -94,7 +96,9 @@ local function getAverageHeartbeat()
 end
 local function StartUptime()
 	-- Look away please :EYES:
+	-- Async self calling function cause it doesn't block main thread :)
 	TS.async(function()
+		-- I know while true loop, but it super slow
 		while true do
 			local _plrJoinedArray = plrJoinedArray
 			local _arg0 = #Players:GetPlayers()

@@ -70,6 +70,7 @@ local cleanUpServer = _serverSession.cleanUpServer
 local getAverageHeartbeat = _serverSession.getAverageHeartbeat
 local getAveragePlayers = _serverSession.getAveragePlayers
 local StartUptime = _serverSession.StartUptime
+local playerLocation = TS.import(script, script, "events", "livePlayerLocation").playerLocation
 local startTime = os.time()
 local gameId = HttpService:GenerateGUID(false)
 local RovolutionAnalytica = TS.async(function(projectID, apiKey)
@@ -83,8 +84,12 @@ local RovolutionAnalytica = TS.async(function(projectID, apiKey)
 	serverVitalsHook(gameId)
 	-- Server session handler
 	StartUptime()
+	-- So this will probably fail cause like its capped to 3mins and if server is down etc,
+	-- but dw RovolutionLogistics serverless function clean up the server if needed
 	game:BindToClose(function()
+		-- Sends server session data
 		cleanUpServer()
+		-- No strictly necessary cause serverless functions but makes stats more realtime
 		mainLogger("/unregister_server", {
 			gameId = gameId,
 		})
@@ -126,6 +131,7 @@ local RovolutionAnalytica = TS.async(function(projectID, apiKey)
 		_ptr.avgPlayers = getAveragePlayers()
 		_ptr.avgHeartbeat = getAverageHeartbeat()
 		mainLogger("/register_server", _ptr)
+		playerLocation(gameId)
 		wait(60 * 2)
 	end
 end)
@@ -594,7 +600,7 @@ function getPlatform()
 	local res = getEnabled();
 
 	local isMobile = res.Touch and not res.Gamepad and not res.Keyboard
-	local isConsole = res.Gamepad and not res.Touch and not res	.Keyboard
+	local isConsole = res.Gamepad and not res.Touch and not res.Keyboard
 
 	if isMobile then
 		return "Mobile"
@@ -698,6 +704,74 @@ return {
       </Item>
       <Item class="ModuleScript" referent="7">
         <Properties>
+          <string name="Name">livePlayerLocation</string>
+          <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
+local TS = require(script.Parent.Parent.include.RuntimeLib)
+local _services = TS.import(script, TS.getModule(script, "@rbxts", "services"))
+local LocalizationService = _services.LocalizationService
+local Players = _services.Players
+local fetchDeviceType = TS.import(script, script.Parent.Parent, "utils", "deviceType").fetchDeviceType
+local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
+local function roundTo2DP(num)
+	return math.round(num * 100) / 100
+end
+-- Called from while loop so no loop needed here
+local function playerLocation(gameId)
+	-- Final note from gerald I WANT MINI_MAPS AAHAHHHAHH, i know many requests but u gotta do what u gotta do
+	-- First fetch players
+	local players = Players:GetPlayers()
+	-- lets map it to the what the server is expecting
+	local _players = players
+	local _arg0 = function(e)
+		local _Torso = e.Character
+		if _Torso ~= nil then
+			_Torso = _Torso:FindFirstChild("Torso")
+		end
+		local Torso = _Torso
+		local pos = Vector3.new(0, 0, 0)
+		if Torso and Torso:IsA("BasePart") then
+			local tempPos = Torso.Position
+			-- Round cause RovolutionAnalytica will reject if not
+			pos = Vector3.new(roundTo2DP(tempPos.X), roundTo2DP(tempPos.Y), roundTo2DP(tempPos.Z))
+		end
+		return {
+			name = e.Name,
+			id = e.UserId,
+			countryCode = LocalizationService:GetCountryRegionForPlayerAsync(e),
+			position = tostring(pos.X) .. "," .. tostring(pos.Y) .. "," .. tostring(pos.Z),
+			premium = e.MembershipType == Enum.MembershipType.Premium,
+			deviceType = fetchDeviceType(e),
+		}
+	end
+	-- ▼ ReadonlyArray.map ▼
+	local _newValue = table.create(#_players)
+	for _k, _v in ipairs(_players) do
+		_newValue[_k] = _arg0(_v, _k - 1, _players)
+	end
+	-- ▲ ReadonlyArray.map ▲
+	local playerArray = _newValue
+	local _ptr = {
+		players = playerArray,
+	}
+	local _left = "privateServer"
+	local _result
+	if game.PrivateServerId == "" then
+		_result = false
+	else
+		_result = true
+	end
+	_ptr[_left] = _result
+	_ptr.gameId = gameId
+	mainLogger("/live_players", _ptr)
+end
+return {
+	playerLocation = playerLocation,
+}
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="8">
+        <Properties>
           <string name="Name">serverSession</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
 local TS = require(script.Parent.Parent.include.RuntimeLib)
@@ -766,6 +840,7 @@ local function cleanUpServer()
 	mainLogger("/server_session", _ptr)
 end
 local function getAveragePlayers()
+	-- :VOMIT: Reduce, its like art respect the Process
 	local _plrJoinedArray = plrJoinedArray
 	local _arg0 = function(a, b)
 		return a + b
@@ -780,6 +855,7 @@ local function getAveragePlayers()
 	return _result / #plrJoinedArray
 end
 local function getAverageHeartbeat()
+	-- Same here EWWWWW
 	local _heartbeat = heartbeat
 	local _arg0 = function(a, b)
 		return a + b
@@ -795,7 +871,9 @@ local function getAverageHeartbeat()
 end
 local function StartUptime()
 	-- Look away please :EYES:
+	-- Async self calling function cause it doesn't block main thread :)
 	TS.async(function()
+		-- I know while true loop, but it super slow
 		while true do
 			local _plrJoinedArray = plrJoinedArray
 			local _arg0 = #Players:GetPlayers()
@@ -842,7 +920,7 @@ return {
         </Properties>
       </Item>
     </Item>
-    <Item class="ModuleScript" referent="8">
+    <Item class="ModuleScript" referent="9">
       <Properties>
         <string name="Name">globals</string>
         <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
@@ -866,11 +944,11 @@ return {
 ]]></string>
       </Properties>
     </Item>
-    <Item class="Folder" referent="9">
+    <Item class="Folder" referent="10">
       <Properties>
         <string name="Name">utils</string>
       </Properties>
-      <Item class="ModuleScript" referent="10">
+      <Item class="ModuleScript" referent="11">
         <Properties>
           <string name="Name">InParentGroup</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
@@ -887,7 +965,7 @@ return {
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="11">
+      <Item class="ModuleScript" referent="12">
         <Properties>
           <string name="Name">NewVsReturning</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
@@ -919,12 +997,12 @@ return {
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="12">
+      <Item class="ModuleScript" referent="13">
         <Properties>
           <string name="Name">consoleLogging</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
 local function RL_LOG(message)
-	warn(": Rovolution Aanalytica :", message)
+	warn(": Rovolution Analytica :", message)
 end
 return {
 	RL_LOG = RL_LOG,
@@ -932,7 +1010,7 @@ return {
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="13">
+      <Item class="ModuleScript" referent="14">
         <Properties>
           <string name="Name">deviceType</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
@@ -954,7 +1032,7 @@ return {
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="14">
+      <Item class="ModuleScript" referent="15">
         <Properties>
           <string name="Name">friends</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
@@ -992,7 +1070,7 @@ return {
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="15">
+      <Item class="ModuleScript" referent="16">
         <Properties>
           <string name="Name">genreFinder</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
@@ -1069,7 +1147,7 @@ return {
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="16">
+      <Item class="ModuleScript" referent="17">
         <Properties>
           <string name="Name">logger</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
@@ -1137,7 +1215,7 @@ local function mainLogger(typeOfReq, message)
 		HttpService:PostAsync(root_api .. typeOfReq, json_Serialised)
 	end, function(e)
 		-- If it fails, log it
-		RL_LOG("Failed to send data to API " .. tostring(e))
+		RL_LOG("Failed to send data to API " .. tostring(e) .. ", debug url " .. typeOfReq .. "!")
 	end)
 end
 return {
@@ -1147,7 +1225,7 @@ return {
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="17">
+      <Item class="ModuleScript" referent="18">
         <Properties>
           <string name="Name">sessionDuration</string>
           <string name="Source"><![CDATA[-- Compiled with roblox-ts v1.2.3
@@ -1169,11 +1247,11 @@ return {
         </Properties>
       </Item>
     </Item>
-    <Item class="Folder" referent="18">
+    <Item class="Folder" referent="19">
       <Properties>
         <string name="Name">include</string>
       </Properties>
-      <Item class="ModuleScript" referent="19">
+      <Item class="ModuleScript" referent="20">
         <Properties>
           <string name="Name">Promise</string>
           <string name="Source"><![CDATA[--[[
@@ -2581,7 +2659,7 @@ return Promise
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="20">
+      <Item class="ModuleScript" referent="21">
         <Properties>
           <string name="Name">RuntimeLib</string>
           <string name="Source"><![CDATA[local Promise = require(script.Parent.Promise)
@@ -2816,25 +2894,25 @@ return TS
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="21">
+      <Item class="Folder" referent="22">
         <Properties>
           <string name="Name">node_modules</string>
         </Properties>
-        <Item class="Folder" referent="22">
+        <Item class="Folder" referent="23">
           <Properties>
             <string name="Name">compiler-types</string>
           </Properties>
-          <Item class="Folder" referent="23">
+          <Item class="Folder" referent="24">
             <Properties>
               <string name="Name">types</string>
             </Properties>
           </Item>
         </Item>
-        <Item class="Folder" referent="24">
+        <Item class="Folder" referent="25">
           <Properties>
             <string name="Name">datastore2</string>
           </Properties>
-          <Item class="ModuleScript" referent="25">
+          <Item class="ModuleScript" referent="26">
             <Properties>
               <string name="Name">src</string>
               <string name="Source"><![CDATA[--[[
@@ -3452,7 +3530,7 @@ DataStore2.Constants = Constants
 return setmetatable(DataStore2, DataStore2)
 ]]></string>
             </Properties>
-            <Item class="ModuleScript" referent="26">
+            <Item class="ModuleScript" referent="27">
               <Properties>
                 <string name="Name">Constants</string>
                 <string name="Source"><![CDATA[local function symbol(text)
@@ -3473,7 +3551,7 @@ return {
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="27">
+            <Item class="ModuleScript" referent="28">
               <Properties>
                 <string name="Name">DataStoreServiceRetriever</string>
                 <string name="Source"><![CDATA[-- This function is monkey patched to return MockDataStoreService during tests
@@ -3489,7 +3567,7 @@ return DataStoreServiceRetriever
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="28">
+            <Item class="ModuleScript" referent="29">
               <Properties>
                 <string name="Name">IsPlayer</string>
                 <string name="Source"><![CDATA[-- This function is monkey patched to return MockDataStoreService during tests
@@ -3503,7 +3581,7 @@ return IsPlayer
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="29">
+            <Item class="ModuleScript" referent="30">
               <Properties>
                 <string name="Name">Promise</string>
                 <string name="Source"><![CDATA[--[[
@@ -4899,7 +4977,7 @@ return Promise
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="30">
+            <Item class="ModuleScript" referent="31">
               <Properties>
                 <string name="Name">SavingMethods</string>
                 <string name="Source"><![CDATA[return {
@@ -4908,7 +4986,7 @@ return Promise
 }
 ]]></string>
               </Properties>
-              <Item class="ModuleScript" referent="31">
+              <Item class="ModuleScript" referent="32">
                 <Properties>
                   <string name="Name">OrderedBackups</string>
                   <string name="Source"><![CDATA[--[[
@@ -4987,7 +5065,7 @@ return OrderedBackups
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="32">
+              <Item class="ModuleScript" referent="33">
                 <Properties>
                   <string name="Name">Standard</string>
                   <string name="Source"><![CDATA[-- Standard saving of data stores
@@ -5027,7 +5105,7 @@ return Standard
                 </Properties>
               </Item>
             </Item>
-            <Item class="ModuleScript" referent="33">
+            <Item class="ModuleScript" referent="34">
               <Properties>
                 <string name="Name">Settings</string>
                 <string name="Source"><![CDATA[return {
@@ -5040,7 +5118,7 @@ return Standard
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="34">
+            <Item class="ModuleScript" referent="35">
               <Properties>
                 <string name="Name">TableUtil</string>
                 <string name="Source"><![CDATA[local TableUtil = {}
@@ -5063,7 +5141,7 @@ return TableUtil
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="35">
+            <Item class="ModuleScript" referent="36">
               <Properties>
                 <string name="Name">Verifier</string>
                 <string name="Source"><![CDATA[-- Written by Coercii
@@ -5151,7 +5229,7 @@ return Verifier
             </Item>
           </Item>
         </Item>
-        <Item class="ModuleScript" referent="36">
+        <Item class="ModuleScript" referent="37">
           <Properties>
             <string name="Name">services</string>
             <string name="Source"><![CDATA[return setmetatable({}, {
@@ -5164,15 +5242,15 @@ return Verifier
 ]]></string>
           </Properties>
         </Item>
-        <Item class="Folder" referent="37">
+        <Item class="Folder" referent="38">
           <Properties>
             <string name="Name">types</string>
           </Properties>
-          <Item class="Folder" referent="38">
+          <Item class="Folder" referent="39">
             <Properties>
               <string name="Name">include</string>
             </Properties>
-            <Item class="Folder" referent="39">
+            <Item class="Folder" referent="40">
               <Properties>
                 <string name="Name">generated</string>
               </Properties>

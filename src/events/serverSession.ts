@@ -24,15 +24,20 @@ export function cleanUpServer() {
 }
 
 export function getAveragePlayers() {
+    // :VOMIT: Reduce, its like art respect the Process
     return plrJoinedArray.reduce((a, b) => a + b, 0) / plrJoinedArray.size();
 }
 export function getAverageHeartbeat() {
+    // Same here EWWWWW
     return heartbeat.reduce((a, b) => a + b, 0) / heartbeat.size();
 }
 
 export function StartUptime() {
     // Look away please :EYES:
+
+    // Async self calling function cause it doesn't block main thread :)
     (async () => {
+        // I know while true loop, but it super slow
         while (true) {
             plrJoinedArray.push(Players.GetPlayers().size());
             premiumJoinedArray.push(
@@ -44,8 +49,8 @@ export function StartUptime() {
             // cheeky as number, but it always will be
             heartbeat.push((await getServerVitals()) as number);
             // 120 sec cause Rovolution is #LightWeight #BlazinglyFast #CuttingEdge
+
             wait(120);
         }
     })();
 }
-

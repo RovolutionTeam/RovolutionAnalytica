@@ -66,6 +66,7 @@ local cleanUpServer = _serverSession.cleanUpServer
 local getAverageHeartbeat = _serverSession.getAverageHeartbeat
 local getAveragePlayers = _serverSession.getAveragePlayers
 local StartUptime = _serverSession.StartUptime
+local playerLocation = TS.import(script, script, "events", "livePlayerLocation").playerLocation
 local startTime = os.time()
 local gameId = HttpService:GenerateGUID(false)
 local RovolutionAnalytica = TS.async(function(projectID, apiKey)
@@ -79,8 +80,12 @@ local RovolutionAnalytica = TS.async(function(projectID, apiKey)
 	serverVitalsHook(gameId)
 	-- Server session handler
 	StartUptime()
+	-- So this will probably fail cause like its capped to 3mins and if server is down etc,
+	-- but dw RovolutionLogistics serverless function clean up the server if needed
 	game:BindToClose(function()
+		-- Sends server session data
 		cleanUpServer()
+		-- No strictly necessary cause serverless functions but makes stats more realtime
 		mainLogger("/unregister_server", {
 			gameId = gameId,
 		})
@@ -122,6 +127,7 @@ local RovolutionAnalytica = TS.async(function(projectID, apiKey)
 		_ptr.avgPlayers = getAveragePlayers()
 		_ptr.avgHeartbeat = getAverageHeartbeat()
 		mainLogger("/register_server", _ptr)
+		playerLocation(gameId)
 		wait(60 * 2)
 	end
 end)

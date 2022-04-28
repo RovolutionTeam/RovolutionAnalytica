@@ -95,7 +95,7 @@ function getPlatform()
 	local res = getEnabled();
 
 	local isMobile = res.Touch and not res.Gamepad and not res.Keyboard
-	local isConsole = res.Gamepad and not res.Touch and not res	.Keyboard
+	local isConsole = res.Gamepad and not res.Touch and not res.Keyboard
 
 	if isMobile then
 		return "Mobile"
