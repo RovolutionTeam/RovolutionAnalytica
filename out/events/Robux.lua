@@ -6,6 +6,7 @@ local _services = TS.import(script, TS.getModule(script, "@rbxts", "services"))
 local HttpService = _services.HttpService
 local LocalizationService = _services.LocalizationService
 local MarketplaceService = _services.MarketplaceService
+local Players = _services.Players
 local mainLogger = TS.import(script, script.Parent.Parent, "utils", "logger").mainLogger
 local checkInParentGroup = TS.import(script, script.Parent.Parent, "utils", "InParentGroup").checkInParentGroup
 local GameMainGenre = TS.import(script, script.Parent.Parent, "utils", "genreFinder").genre
@@ -53,14 +54,19 @@ local SalesHook = TS.async(function()
 		-- Generate return object
 		mainLogger("/handle_purchase", TS.await(generateReturnObject(plr, gamepassID, purchased, "GamePass", gamepassInfo)))
 	end))
-	MarketplaceService.PromptPurchaseFinished:Connect(TS.async(function(plr, productId, purchased)
+	-- Yes its deprecated but it is the only way to detect when a product is purchased or closed
+	-- https://developer.roblox.com/en-us/api-reference/event/MarketplaceService/PromptProductPurchaseFinished
+	MarketplaceService.PromptProductPurchaseFinished:Connect(TS.async(function(userId, productId, purchased)
+		local plr = Players:GetPlayerByUserId(userId)
+		if plr == nil then
+			return nil
+		end
 		-- get the product Info
 		local productInfo = fetchProductInfo(productId, Enum.InfoType.Product)
 		-- Generate return object
 		mainLogger("/handle_purchase", TS.await(generateReturnObject(plr, productId, purchased, "Product", productInfo)))
 	end))
 end)
-local _ = MarketplaceService
 return {
 	SalesHook = SalesHook,
 }

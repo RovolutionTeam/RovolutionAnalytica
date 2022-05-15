@@ -2,7 +2,7 @@
 
 // This handles all robux transiations --
 
-import { HttpService, LocalizationService, MarketplaceService } from '@rbxts/services';
+import { HttpService, LocalizationService, MarketplaceService, Players } from '@rbxts/services';
 import { mainLogger } from 'utils/logger';
 import { checkInParentGroup } from 'utils/InParentGroup';
 import { genre as GameMainGenre } from 'utils/genreFinder';
@@ -55,7 +55,13 @@ export async function SalesHook() {
         mainLogger('/handle_purchase', await generateReturnObject(plr, gamepassID, purchased, 'GamePass', gamepassInfo));
     });
 
-    MarketplaceService.PromptPurchaseFinished.Connect(async (plr: Player, productId: number, purchased: boolean) => {
+    // Yes its deprecated but it is the only way to detect when a product is purchased or closed
+    // https://developer.roblox.com/en-us/api-reference/event/MarketplaceService/PromptProductPurchaseFinished
+    MarketplaceService.PromptProductPurchaseFinished.Connect(async (userId: number, productId: number, purchased: boolean) => {
+        let plr = Players.GetPlayerByUserId(userId);
+
+        if (plr === undefined) return;
+
         // get the product Info
         let productInfo = fetchProductInfo(productId, Enum.InfoType.Product);
 
@@ -63,4 +69,3 @@ export async function SalesHook() {
         mainLogger('/handle_purchase', await generateReturnObject(plr, productId, purchased, 'Product', productInfo));
     });
 }
-MarketplaceService;

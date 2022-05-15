@@ -1,0 +1,80 @@
+Date : 2022-05-15 14:07:25
+Directory : h:\Desktop\code\AnalyticsCDN
+Total : 44 files,  13945 codes, 426 comments, 1192 blanks, all 15563 lines
+
+Languages
++--------------------+------------+------------+------------+------------+------------+
+| language           | files      | code       | comment    | blank      | total      |
++--------------------+------------+------------+------------+------------+------------+
+| JSON               |          5 |      6,438 |          0 |          4 |      6,442 |
+| XML                |          1 |      4,568 |          0 |        695 |      5,263 |
+| Lua                |         20 |      2,322 |        265 |        356 |      2,943 |
+| TypeScript         |         16 |        546 |        159 |        125 |        830 |
+| Markdown           |          1 |         49 |          0 |         10 |         59 |
+| JSON with Comments |          1 |         22 |          2 |          2 |         26 |
++--------------------+------------+------------+------------+------------+------------+
+
+Directories
++----------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                           | files      | code       | comment    | blank      | total      |
++----------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                              |         44 |     13,945 |        426 |      1,192 |     15,563 |
+| include                                                        |          2 |      1,220 |        135 |        278 |      1,633 |
+| out                                                            |         17 |        993 |        118 |         49 |      1,160 |
+| out\events                                                     |          7 |        627 |         84 |         35 |        746 |
+| out\utils                                                      |          8 |        230 |         20 |          8 |        258 |
+| src                                                            |         17 |        655 |        171 |        154 |        980 |
+| src\events                                                     |          7 |        445 |         58 |        104 |        607 |
+| src\utils                                                      |          8 |        183 |         12 |         47 |        242 |
++----------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++----------------------------------------------------------------+--------------------+------------+------------+------------+------------+
+| filename                                                       | language           | code       | comment    | blank      | total      |
++----------------------------------------------------------------+--------------------+------------+------------+------------+------------+
+| h:\Desktop\code\AnalyticsCDN\.eslintrc.json                    | JSON               |         33 |          0 |          0 |         33 |
+| h:\Desktop\code\AnalyticsCDN\.prettierrc                       | JSON               |          7 |          0 |          1 |          8 |
+| h:\Desktop\code\AnalyticsCDN\README.md                         | Markdown           |         49 |          0 |         10 |         59 |
+| h:\Desktop\code\AnalyticsCDN\build.rbxmx                       | XML                |      4,568 |          0 |        695 |      5,263 |
+| h:\Desktop\code\AnalyticsCDN\default.project.json              | JSON               |         13 |          0 |          1 |         14 |
+| h:\Desktop\code\AnalyticsCDN\include\Promise.lua               | Lua                |      1,037 |        126 |        240 |      1,403 |
+| h:\Desktop\code\AnalyticsCDN\include\RuntimeLib.lua            | Lua                |        183 |          9 |         38 |        230 |
+| h:\Desktop\code\AnalyticsCDN\out\events\PlayerJoins.lua        | Lua                |         96 |         10 |          1 |        107 |
+| h:\Desktop\code\AnalyticsCDN\out\events\Robux.lua              | Lua                |         62 |         10 |          1 |         73 |
+| h:\Desktop\code\AnalyticsCDN\out\events\ServerVitals.lua       | Lua                |        150 |         16 |          1 |        167 |
+| h:\Desktop\code\AnalyticsCDN\out\events\client.client.lua      | Lua                |        109 |         12 |         29 |        150 |
+| h:\Desktop\code\AnalyticsCDN\out\events\invites.lua            | Lua                |         40 |          1 |          1 |         42 |
+| h:\Desktop\code\AnalyticsCDN\out\events\livePlayerLocation.lua | Lua                |         54 |          8 |          1 |         63 |
+| h:\Desktop\code\AnalyticsCDN\out\events\serverSession.lua      | Lua                |        116 |         27 |          1 |        144 |
+| h:\Desktop\code\AnalyticsCDN\out\globals.lua                   | Lua                |         16 |          2 |          1 |         19 |
+| h:\Desktop\code\AnalyticsCDN\out\init.lua                      | Lua                |        120 |         12 |          5 |        137 |
+| h:\Desktop\code\AnalyticsCDN\out\utils\InParentGroup.lua       | Lua                |          9 |          2 |          1 |         12 |
+| h:\Desktop\code\AnalyticsCDN\out\utils\NewVsReturning.lua      | Lua                |         23 |          3 |          1 |         27 |
+| h:\Desktop\code\AnalyticsCDN\out\utils\consoleLogging.lua      | Lua                |          6 |          1 |          1 |          8 |
+| h:\Desktop\code\AnalyticsCDN\out\utils\deviceType.lua          | Lua                |         14 |          2 |          1 |         17 |
+| h:\Desktop\code\AnalyticsCDN\out\utils\friends.lua             | Lua                |         30 |          2 |          1 |         33 |
+| h:\Desktop\code\AnalyticsCDN\out\utils\genreFinder.lua         | Lua                |         70 |          1 |          1 |         72 |
+| h:\Desktop\code\AnalyticsCDN\out\utils\logger.lua              | Lua                |         64 |          8 |          1 |         73 |
+| h:\Desktop\code\AnalyticsCDN\out\utils\sessionDuration.lua     | Lua                |         14 |          1 |          1 |         16 |
+| h:\Desktop\code\AnalyticsCDN\package-lock.json                 | JSON               |      6,354 |          0 |          1 |      6,355 |
+| h:\Desktop\code\AnalyticsCDN\package.json                      | JSON               |         31 |          0 |          1 |         32 |
+| h:\Desktop\code\AnalyticsCDN\src\events\PlayerJoins.ts         | TypeScript         |         67 |          7 |         15 |         89 |
+| h:\Desktop\code\AnalyticsCDN\src\events\Robux.ts               | TypeScript         |         50 |          9 |         13 |         72 |
+| h:\Desktop\code\AnalyticsCDN\src\events\ServerVitals.ts        | TypeScript         |        119 |         15 |         24 |        158 |
+| h:\Desktop\code\AnalyticsCDN\src\events\client.client.lua      | Lua                |        109 |         12 |         29 |        150 |
+| h:\Desktop\code\AnalyticsCDN\src\events\invites.ts             | TypeScript         |         24 |          0 |          3 |         27 |
+| h:\Desktop\code\AnalyticsCDN\src\events\livePlayerLocation.ts  | TypeScript         |         38 |          6 |         10 |         54 |
+| h:\Desktop\code\AnalyticsCDN\src\events\serverSession.ts       | TypeScript         |         38 |          9 |         10 |         57 |
+| h:\Desktop\code\AnalyticsCDN\src\globals.ts                    | TypeScript         |         12 |          1 |          3 |         16 |
+| h:\Desktop\code\AnalyticsCDN\src\index.ts                      | TypeScript         |         15 |        100 |          0 |        115 |
+| h:\Desktop\code\AnalyticsCDN\src\utils\InParentGroup.ts        | TypeScript         |          6 |          1 |          2 |          9 |
+| h:\Desktop\code\AnalyticsCDN\src\utils\NewVsReturning.ts       | TypeScript         |         18 |          2 |          6 |         26 |
+| h:\Desktop\code\AnalyticsCDN\src\utils\consoleLogging.ts       | TypeScript         |          3 |          0 |          1 |          4 |
+| h:\Desktop\code\AnalyticsCDN\src\utils\deviceType.ts           | TypeScript         |          5 |          1 |          3 |          9 |
+| h:\Desktop\code\AnalyticsCDN\src\utils\friends.ts              | TypeScript         |         15 |          1 |          7 |         23 |
+| h:\Desktop\code\AnalyticsCDN\src\utils\genreFinder.ts          | TypeScript         |         90 |          0 |         16 |        106 |
+| h:\Desktop\code\AnalyticsCDN\src\utils\logger.ts               | TypeScript         |         39 |          7 |         11 |         57 |
+| h:\Desktop\code\AnalyticsCDN\src\utils\sessionDuration.ts      | TypeScript         |          7 |          0 |          1 |          8 |
+| h:\Desktop\code\AnalyticsCDN\tsconfig.json                     | JSON with Comments |         22 |          2 |          2 |         26 |
+| Total                                                          |                    |     13,945 |        426 |      1,192 |     15,563 |
++----------------------------------------------------------------+--------------------+------------+------------+------------+------------+
